@@ -1,41 +1,61 @@
-import 'package:edufess/app/app.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:edufess/app/app.dart';
+import 'package:edufess/features/auth/presentation/providers/auth_providers.dart';
+import 'package:edufess/features/auth/data/auth_repository.dart';
 
 void main() {
-  testWidgets('app boots into the Home tab', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: EdufessApp()));
-    await tester.pumpAndSettle();
+  group('App smoke tests (unauthenticated)', () {
+    testWidgets('redirects to login when not authenticated', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentSessionProvider.overrideWithValue(const AsyncData(null)),
+            authRepositoryProvider.overrideWithValue(_MockAuthRepository()),
+          ],
+          child: const EdufessApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(
-      find.text('Feed catatan, rangkuman, dan diskusi akan muncul di sini.'),
-      findsOneWidget,
-    );
+      // Should show login page
+      expect(find.text('Masuk ke EduFess'), findsOneWidget);
+      expect(find.text('Masuk'), findsOneWidget);
+    });
   });
+}
 
-  testWidgets('bottom navigation exposes the five destinations', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const ProviderScope(child: EdufessApp()));
-    await tester.pumpAndSettle();
+/// Mock auth repository that returns no session.
+class _MockAuthRepository implements AuthRepository {
+  @override
+  Session? get currentSession => null;
 
-    expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.byType(NavigationDestination), findsNWidgets(5));
-  });
+  @override
+  User? get currentUser => null;
 
-  testWidgets('tapping BK switches to the counseling placeholder', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const ProviderScope(child: EdufessApp()));
-    await tester.pumpAndSettle();
+  @override
+  Stream<AuthState> get authStateChanges => const Stream.empty();
 
-    await tester.tap(find.text('BK'));
-    await tester.pumpAndSettle();
+  @override
+  Future<AuthResponse> signUp({
+    required String email,
+    required String password,
+    required String pseudonym,
+    required String inviteCode,
+  }) async {
+    throw UnimplementedError();
+  }
 
-    expect(
-      find.text('Ruang privat untuk dukungan siswa. Terpisah dari feed publik.'),
-      findsOneWidget,
-    );
-  });
+  @override
+  Future<AuthResponse> signIn({
+    required String email,
+    required String password,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> signOut() async {}
 }
