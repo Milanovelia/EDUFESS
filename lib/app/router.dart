@@ -11,6 +11,7 @@ import '../features/counseling/presentation/pages/bk_page.dart';
 import '../features/create_post/presentation/pages/create_post_page.dart';
 import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
+import '../features/feed/presentation/pages/post_detail_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import 'app_shell.dart';
 
@@ -37,6 +38,10 @@ abstract final class AppRoutes {
 
   static const String profile = '/profile';
   static const String profileName = 'profile';
+
+  static const String postDetailBase = '/post';
+  static const String postDetail = '/post/:id';
+  static const String postDetailName = 'postDetail';
 }
 
 /// Whether the given [location] is an auth route (login or register).
@@ -81,6 +86,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.register,
         name: AppRoutes.registerName,
         builder: (context, state) => const RegisterPage(),
+      ),
+
+      // Post detail (outside shell to show back button)
+      GoRoute(
+        path: AppRoutes.postDetail,
+        name: AppRoutes.postDetailName,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return PostDetailPage(postId: id);
+        },
       ),
 
       // App shell with bottom navigation
