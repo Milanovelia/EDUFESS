@@ -7,8 +7,11 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/providers/auth_providers.dart';
+import '../features/counseling/presentation/pages/bk_appointments_page.dart';
 import '../features/counseling/presentation/pages/bk_page.dart';
 import '../features/counseling/presentation/pages/bk_conversation_page.dart';
+import '../features/counseling/presentation/pages/counselor_appointments_page.dart';
+import '../features/counseling/presentation/pages/counselor_availability_page.dart';
 import '../features/create_post/presentation/pages/create_post_page.dart';
 import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
@@ -54,6 +57,15 @@ abstract final class AppRoutes {
 
   static const String bkConversation = '/bk/:id';
   static const String bkConversationName = 'bkConversation';
+
+  static const String bkAppointments = '/bk/appointments';
+  static const String bkAppointmentsName = 'bkAppointments';
+
+  static const String counselorAvailability = '/bk/availability';
+  static const String counselorAvailabilityName = 'counselorAvailability';
+
+  static const String counselorAppointments = '/bk/counselor/appointments';
+  static const String counselorAppointmentsName = 'counselorAppointments';
 }
 
 /// Whether the given [location] is an auth route (login or register).
@@ -126,6 +138,21 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id']!;
           return BkConversationPage(conversationId: id);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.bkAppointments,
+        name: AppRoutes.bkAppointmentsName,
+        builder: (context, state) => const BkAppointmentsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.counselorAvailability,
+        name: AppRoutes.counselorAvailabilityName,
+        builder: (context, state) => const CounselorAvailabilityPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.counselorAppointments,
+        name: AppRoutes.counselorAppointmentsName,
+        builder: (context, state) => const CounselorAppointmentsPage(),
       ),
 
       // App shell with bottom navigation

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/supabase_providers.dart';
 import '../../data/counseling_repository.dart';
+import '../../data/models/bk_appointment.dart';
 import '../../data/models/bk_conversation.dart';
 
 final counselingRepositoryProvider = Provider<CounselingRepository>((ref) {
@@ -26,6 +27,22 @@ final counselorAssignedProvider = FutureProvider<List<BkConversation>>((ref) asy
 
 final counselingMessagesProvider = FutureProvider.family<List<BkMessage>, String>((ref, conversationId) async {
   return ref.watch(counselingRepositoryProvider).fetchMessages(conversationId);
+});
+
+final availableSlotsProvider = FutureProvider<List<CounselorSlot>>((ref) async {
+  return ref.watch(counselingRepositoryProvider).fetchAvailableSlots();
+});
+
+final studentAppointmentsProvider = FutureProvider<List<BkAppointment>>((ref) async {
+  return ref.watch(counselingRepositoryProvider).fetchStudentAppointments();
+});
+
+final counselorAppointmentsProvider = FutureProvider<List<BkAppointment>>((ref) async {
+  return ref.watch(counselingRepositoryProvider).fetchCounselorAppointments();
+});
+
+final myAvailabilityProvider = FutureProvider<List<CounselorAvailability>>((ref) async {
+  return ref.watch(counselingRepositoryProvider).fetchMyAvailability();
 });
 
 final bkConversationProvider = FutureProvider.family<BkConversation?, String>((ref, id) async {
@@ -145,6 +162,129 @@ class CounselingController extends Notifier<AsyncValue<void>> {
       return null;
     } catch (e) {
       final msg = e is CounselingException ? e.message : 'Gagal menyelesaikan percakapan.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> createAvailability({required DateTime date, required String startTime, required String endTime}) async {
+    state = const AsyncLoading();
+    try {
+      final id = await ref.read(counselingRepositoryProvider).createAvailability(date: date, startTime: startTime, endTime: endTime);
+      ref.invalidate(myAvailabilityProvider);
+      ref.invalidate(availableSlotsProvider);
+      state = const AsyncData(null);
+      return id;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal membuat slot.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> requestAppointment({required String availabilityId, String? studentNote, String? conversationId}) async {
+    state = const AsyncLoading();
+    try {
+      final id = await ref.read(counselingRepositoryProvider).requestAppointment(availabilityId: availabilityId, studentNote: studentNote, conversationId: conversationId);
+      ref.invalidate(studentAppointmentsProvider);
+      ref.invalidate(counselorAppointmentsProvider);
+      ref.invalidate(availableSlotsProvider);
+      state = const AsyncData(null);
+      return id;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal membuat janji.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> acceptAppointment(String appointmentId) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).acceptAppointment(appointmentId);
+      ref.invalidate(counselorAppointmentsProvider);
+      ref.invalidate(studentAppointmentsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal menerima janji.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> rejectAppointment(String appointmentId, {String? reason}) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).rejectAppointment(appointmentId, reason: reason);
+      ref.invalidate(counselorAppointmentsProvider);
+      ref.invalidate(studentAppointmentsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal menolak janji.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> rescheduleAppointment({required String appointmentId, required DateTime newStart, required DateTime newEnd}) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).rescheduleAppointment(appointmentId: appointmentId, newStart: newStart, newEnd: newEnd);
+      ref.invalidate(counselorAppointmentsProvider);
+      ref.invalidate(studentAppointmentsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal mengatur ulang janji.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> cancelStudentAppointment(String appointmentId) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).cancelStudentAppointment(appointmentId);
+      ref.invalidate(studentAppointmentsProvider);
+      ref.invalidate(counselorAppointmentsProvider);
+      ref.invalidate(availableSlotsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal membatalkan janji.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> cancelCounselorAppointment(String appointmentId, {String? reason}) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).cancelCounselorAppointment(appointmentId, reason: reason);
+      ref.invalidate(counselorAppointmentsProvider);
+      ref.invalidate(studentAppointmentsProvider);
+      ref.invalidate(availableSlotsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal membatalkan janji.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> completeAppointment(String appointmentId) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).completeAppointment(appointmentId);
+      ref.invalidate(counselorAppointmentsProvider);
+      ref.invalidate(studentAppointmentsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal menyelesaikan janji.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }

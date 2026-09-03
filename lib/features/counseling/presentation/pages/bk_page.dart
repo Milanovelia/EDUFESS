@@ -58,7 +58,16 @@ class _StudentBkView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _PrivacyCard(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(AppRoutes.bkAppointments),
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    label: const Text('Jadwal Konseling'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 _StartCounselingButton(),
                 const SizedBox(height: AppSpacing.lg),
                 Text('Percakapan Saya', style: Theme.of(context).textTheme.titleMedium),
@@ -301,6 +310,28 @@ class _CounselorBkView extends ConsumerWidget {
       length: 2,
       child: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(AppRoutes.counselorAvailability),
+                    icon: const Icon(Icons.event_available_outlined),
+                    label: const Text('Ketersediaan Saya'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(AppRoutes.counselorAppointments),
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    label: const Text('Jadwal BK'),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const TabBar(tabs: [Tab(text: 'Antrean'), Tab(text: 'Ditangani')]),
           Expanded(
             child: TabBarView(

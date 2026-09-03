@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'models/bk_appointment.dart';
 import 'models/bk_conversation.dart';
 
 class CounselingRepository {
@@ -163,6 +164,127 @@ class CounselingRepository {
   }
 
   // --------------------------------------------------------------------------
+  // Availability
+  // --------------------------------------------------------------------------
+  Future<List<CounselorSlot>> fetchAvailableSlots() async {
+    try {
+      final data = await _client.rpc('get_available_counseling_slots');
+      final list = data as List;
+      return list.map((e) => CounselorSlot.fromMap(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw CounselingException(_translateAvailabilityError(e));
+    }
+  }
+
+  Future<String> createAvailability({required DateTime date, required String startTime, required String endTime}) async {
+    try {
+      final data = await _client.rpc('create_counselor_availability', params: {
+        'p_available_date': date.toIso8601String().split('T')[0],
+        'p_start_time': startTime,
+        'p_end_time': endTime,
+      });
+      return data as String;
+    } catch (e) {
+      throw CounselingException(_translateAvailabilityError(e));
+    }
+  }
+
+  Future<List<CounselorAvailability>> fetchMyAvailability() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return [];
+    final data = await _client.from('counselor_availability').select().eq('counselor_id', user.id).order('available_date', ascending: true);
+    return (data as List).map((e) => CounselorAvailability.fromMap(e as Map<String, dynamic>)).toList();
+  }
+
+  // --------------------------------------------------------------------------
+  // Appointments
+  // --------------------------------------------------------------------------
+  Future<List<BkAppointment>> fetchStudentAppointments() async {
+    try {
+      final data = await _client.rpc('get_student_bk_appointments');
+      final list = data as List;
+      return list.map((e) => BkAppointment.fromStudentMap(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  Future<List<BkAppointment>> fetchCounselorAppointments() async {
+    try {
+      final data = await _client.rpc('get_counselor_bk_appointments');
+      final list = data as List;
+      return list.map((e) => BkAppointment.fromCounselorMap(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  Future<String> requestAppointment({required String availabilityId, String? studentNote, String? conversationId}) async {
+    try {
+      final data = await _client.rpc('request_bk_appointment', params: {
+        'p_availability_id': availabilityId,
+        'p_student_note': studentNote,
+        'p_conversation_id': conversationId,
+      });
+      return data as String;
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  Future<void> acceptAppointment(String appointmentId) async {
+    try {
+      await _client.rpc('accept_bk_appointment', params: {'p_appointment_id': appointmentId});
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  Future<void> rejectAppointment(String appointmentId, {String? reason}) async {
+    try {
+      await _client.rpc('reject_bk_appointment', params: {'p_appointment_id': appointmentId, 'p_reason': reason});
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  Future<void> rescheduleAppointment({required String appointmentId, required DateTime newStart, required DateTime newEnd}) async {
+    try {
+      await _client.rpc('reschedule_bk_appointment', params: {
+        'p_appointment_id': appointmentId,
+        'p_new_start_at': newStart.toIso8601String(),
+        'p_new_end_at': newEnd.toIso8601String(),
+      });
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  Future<void> cancelStudentAppointment(String appointmentId) async {
+    try {
+      await _client.rpc('cancel_student_bk_appointment', params: {'p_appointment_id': appointmentId});
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  Future<void> cancelCounselorAppointment(String appointmentId, {String? reason}) async {
+    try {
+      await _client.rpc('cancel_counselor_bk_appointment', params: {'p_appointment_id': appointmentId, 'p_reason': reason});
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  Future<void> completeAppointment(String appointmentId) async {
+    try {
+      await _client.rpc('complete_bk_appointment', params: {'p_appointment_id': appointmentId});
+    } catch (e) {
+      throw CounselingException(_translateAppointmentError(e));
+    }
+  }
+
+  // --------------------------------------------------------------------------
   // Identity reveal
   // --------------------------------------------------------------------------
   Future<({String studentId, String pseudonym})> revealIdentity({required String conversationId, required String reason}) async {
@@ -228,6 +350,35 @@ class CounselingRepository {
     if (m.contains('not authorized')) return 'Tidak memiliki akses.';
     if (m.contains('not authenticated')) return 'Harus login.';
     return 'Akses identitas gagal.';
+  }
+
+  String _translateAvailabilityError(Object e) {
+    final m = e.toString().toLowerCase();
+    if (m.contains('past slot')) return 'Slot sudah lewat.';
+    if (m.contains('invalid time')) return 'Waktu tidak valid.';
+    if (m.contains('slot sudah ada')) return 'Slot sudah ada.';
+    if (m.contains('not authorized')) return 'Tidak memiliki akses.';
+    if (m.contains('not authenticated')) return 'Harus login.';
+    return 'Gagal mengelola ketersediaan.';
+  }
+
+  String _translateAppointmentError(Object e) {
+    final m = e.toString().toLowerCase();
+    if (m.contains('perlu menyetujui')) return 'Kamu perlu menyetujui ketentuan BK terlebih dahulu.';
+    if (m.contains('slot sudah dipesan')) return 'Slot sudah dipesan.';
+    if (m.contains('slot tidak tersedia')) return 'Slot tidak tersedia.';
+    if (m.contains('past slot') || m.contains('past schedule')) return 'Waktu sudah lewat.';
+    if (m.contains('invalid time') || m.contains('invalid schedule')) return 'Waktu tidak valid.';
+    if (m.contains('duration too long')) return 'Durasi terlalu lama.';
+    if (m.contains('not authorized')) return 'Tidak memiliki akses.';
+    if (m.contains('not found')) return 'Janji tidak ditemukan.';
+    if (m.contains('only pending')) return 'Hanya janji pending yang bisa diproses.';
+    if (m.contains('only assigned')) return 'Hanya janji yang ditangani bisa diselesaikan.';
+    if (m.contains('only accepted')) return 'Hanya janji ter-jadwal bisa diselesaikan.';
+    if (m.contains('cannot cancel')) return 'Tidak bisa membatalkan.';
+    if (m.contains('conflicting')) return 'Jadwal bentrok.';
+    if (m.contains('not authenticated')) return 'Harus login.';
+    return 'Gagal memproses janji.';
   }
 
   String _translateCloseError(Object e) {
