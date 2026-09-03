@@ -11,9 +11,13 @@ import '../features/counseling/presentation/pages/bk_appointments_page.dart';
 import '../features/counseling/presentation/pages/bk_mood_page.dart';
 import '../features/counseling/presentation/pages/bk_page.dart';
 import '../features/counseling/presentation/pages/bk_conversation_page.dart';
+import '../features/counseling/presentation/pages/bk_peer_concern_history_page.dart';
+import '../features/counseling/presentation/pages/bk_peer_concern_page.dart';
 import '../features/counseling/presentation/pages/counselor_appointments_page.dart';
 import '../features/counseling/presentation/pages/counselor_availability_page.dart';
 import '../features/counseling/presentation/pages/counselor_mood_history_page.dart';
+import '../features/counseling/presentation/pages/counselor_peer_concern_detail_page.dart';
+import '../features/counseling/presentation/pages/counselor_peer_concern_queue_page.dart';
 import '../features/create_post/presentation/pages/create_post_page.dart';
 import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
@@ -74,6 +78,18 @@ abstract final class AppRoutes {
 
   static const String counselorMoodHistory = '/bk/mood/:id';
   static const String counselorMoodHistoryName = 'counselorMoodHistory';
+
+  static const String bkPeerConcern = '/bk/peduli-teman';
+  static const String bkPeerConcernName = 'bkPeerConcern';
+
+  static const String bkPeerConcernHistory = '/bk/peduli-teman/history';
+  static const String bkPeerConcernHistoryName = 'bkPeerConcernHistory';
+
+  static const String counselorPeerConcernQueue = '/bk/peduli-teman/counselor';
+  static const String counselorPeerConcernQueueName = 'counselorPeerConcernQueue';
+
+  static const String counselorPeerConcernDetail = '/bk/peduli-teman/counselor/:id';
+  static const String counselorPeerConcernDetailName = 'counselorPeerConcernDetail';
 }
 
 /// Whether the given [location] is an auth route (login or register).
@@ -173,6 +189,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return CounselorMoodHistoryPage(conversationId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.bkPeerConcern,
+        name: AppRoutes.bkPeerConcernName,
+        builder: (context, state) => const BkPeerConcernPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.bkPeerConcernHistory,
+        name: AppRoutes.bkPeerConcernHistoryName,
+        builder: (context, state) => const BkPeerConcernHistoryPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.counselorPeerConcernQueue,
+        name: AppRoutes.counselorPeerConcernQueueName,
+        builder: (context, state) => const CounselorPeerConcernQueuePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.counselorPeerConcernDetail,
+        name: AppRoutes.counselorPeerConcernDetailName,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return CounselorPeerConcernDetailPage(concernId: id);
         },
       ),
 

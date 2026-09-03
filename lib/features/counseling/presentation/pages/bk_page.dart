@@ -91,6 +91,37 @@ class _StudentBkView extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Peduli Teman', style: Theme.of(context).textTheme.titleSmall),
+                        const SizedBox(height: AppSpacing.sm),
+                        const Text('Khawatir tentang temanmu? Kamu dapat menyampaikan perhatian secara privat kepada guru BK.'),
+                        const SizedBox(height: AppSpacing.sm),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.tonalIcon(
+                            onPressed: () => context.push('/bk/peduli-teman'),
+                            icon: Icon(Icons.volunteer_activism_outlined),
+                            label: Text('Sampaikan Kepedulian'),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: () => context.push('/bk/peduli-teman/history'),
+                            child: Text('Riwayat Peduli Teman'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 _StartCounselingButton(),
                 const SizedBox(height: AppSpacing.lg),
                 Text('Percakapan Saya', style: Theme.of(context).textTheme.titleMedium),
@@ -335,21 +366,34 @@ class _CounselorBkView extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => context.push(AppRoutes.counselorAvailability),
-                    icon: const Icon(Icons.event_available_outlined),
-                    label: const Text('Ketersediaan Saya'),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.push(AppRoutes.counselorAvailability),
+                        icon: const Icon(Icons.event_available_outlined),
+                        label: const Text('Ketersediaan Saya'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.push(AppRoutes.counselorAppointments),
+                        icon: const Icon(Icons.calendar_month_outlined),
+                        label: const Text('Jadwal BK'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
+                const SizedBox(height: AppSpacing.sm),
+                SizedBox(
+                  width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () => context.push(AppRoutes.counselorAppointments),
-                    icon: const Icon(Icons.calendar_month_outlined),
-                    label: const Text('Jadwal BK'),
+                    onPressed: () => context.push(AppRoutes.counselorPeerConcernQueue),
+                    icon: const Icon(Icons.volunteer_activism_outlined),
+                    label: const Text('Peduli Teman'),
                   ),
                 ),
               ],
