@@ -4,6 +4,7 @@ import '../../../../core/config/supabase_providers.dart';
 import '../../data/counseling_repository.dart';
 import '../../data/models/bk_appointment.dart';
 import '../../data/models/bk_conversation.dart';
+import '../../data/models/bk_mood_checkin.dart';
 
 final counselingRepositoryProvider = Provider<CounselingRepository>((ref) {
   return CounselingRepository(ref.watch(supabaseClientProvider));
@@ -27,6 +28,14 @@ final counselorAssignedProvider = FutureProvider<List<BkConversation>>((ref) asy
 
 final counselingMessagesProvider = FutureProvider.family<List<BkMessage>, String>((ref, conversationId) async {
   return ref.watch(counselingRepositoryProvider).fetchMessages(conversationId);
+});
+
+final studentMoodHistoryProvider = FutureProvider<List<BkMoodCheckin>>((ref) async {
+  return ref.watch(counselingRepositoryProvider).fetchStudentMoodHistory(limit: 30, offset: 0);
+});
+
+final counselorMoodHistoryProvider = FutureProvider.family<List<BkMoodCheckin>, String>((ref, conversationId) async {
+  return ref.watch(counselingRepositoryProvider).fetchCounselorStudentMoodHistory(conversationId: conversationId, limit: 30, offset: 0);
 });
 
 final availableSlotsProvider = FutureProvider<List<CounselorSlot>>((ref) async {
@@ -290,5 +299,26 @@ class CounselingController extends Notifier<AsyncValue<void>> {
     }
   }
 }
+
+class MoodController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  Future<String?> submit({required int moodLevel, String? note}) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).submitMoodCheckin(moodLevel: moodLevel, note: note);
+      ref.invalidate(studentMoodHistoryProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal menyimpan mood.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+}
+
+final moodControllerProvider = NotifierProvider<MoodController, AsyncValue<void>>(MoodController.new);
 
 final counselingControllerProvider = NotifierProvider<CounselingController, AsyncValue<void>>(CounselingController.new);

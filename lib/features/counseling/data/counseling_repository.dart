@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/bk_appointment.dart';
 import 'models/bk_conversation.dart';
+import 'models/bk_mood_checkin.dart';
 
 class CounselingRepository {
   CounselingRepository(this._client);
@@ -285,6 +286,48 @@ class CounselingRepository {
   }
 
   // --------------------------------------------------------------------------
+  // Mood check-in
+  // --------------------------------------------------------------------------
+  Future<String> submitMoodCheckin({required int moodLevel, String? note}) async {
+    try {
+      final data = await _client.rpc('submit_bk_mood_checkin', params: {
+        'p_mood_level': moodLevel,
+        'p_note': note,
+      });
+      return data as String;
+    } catch (e) {
+      throw CounselingException(_translateMoodError(e));
+    }
+  }
+
+  Future<List<BkMoodCheckin>> fetchStudentMoodHistory({int limit = 30, int offset = 0}) async {
+    try {
+      final data = await _client.rpc('get_student_bk_mood_history', params: {
+        'p_limit': limit,
+        'p_offset': offset,
+      });
+      final list = data as List;
+      return list.map((e) => BkMoodCheckin.fromMap(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw CounselingException(_translateMoodError(e));
+    }
+  }
+
+  Future<List<BkMoodCheckin>> fetchCounselorStudentMoodHistory({required String conversationId, int limit = 30, int offset = 0}) async {
+    try {
+      final data = await _client.rpc('get_counselor_student_mood_history', params: {
+        'p_conversation_id': conversationId,
+        'p_limit': limit,
+        'p_offset': offset,
+      });
+      final list = data as List;
+      return list.map((e) => BkMoodCheckin.fromMap(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw CounselingException(_translateMoodError(e));
+    }
+  }
+
+  // --------------------------------------------------------------------------
   // Identity reveal
   // --------------------------------------------------------------------------
   Future<({String studentId, String pseudonym})> revealIdentity({required String conversationId, required String reason}) async {
@@ -350,6 +393,16 @@ class CounselingRepository {
     if (m.contains('not authorized')) return 'Tidak memiliki akses.';
     if (m.contains('not authenticated')) return 'Harus login.';
     return 'Akses identitas gagal.';
+  }
+
+  String _translateMoodError(Object e) {
+    final m = e.toString().toLowerCase();
+    if (m.contains('perlu menyetujui')) return 'Kamu perlu menyetujui ketentuan BK terlebih dahulu.';
+    if (m.contains('invalid mood level')) return 'Mood tidak valid.';
+    if (m.contains('note too long')) return 'Catatan terlalu panjang.';
+    if (m.contains('not authorized')) return 'Tidak memiliki akses.';
+    if (m.contains('not authenticated')) return 'Harus login.';
+    return 'Gagal memproses mood.';
   }
 
   String _translateAvailabilityError(Object e) {

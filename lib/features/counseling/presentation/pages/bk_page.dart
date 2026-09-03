@@ -59,6 +59,29 @@ class _StudentBkView extends ConsumerWidget {
               children: [
                 _PrivacyCard(),
                 const SizedBox(height: AppSpacing.md),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Bagaimana perasaanmu hari ini?', style: Theme.of(context).textTheme.titleSmall),
+                        const SizedBox(height: AppSpacing.sm),
+                        const Text('Isi Mood Check-In untuk mencatat perasaanmu.'),
+                        const SizedBox(height: AppSpacing.sm),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.tonalIcon(
+                            onPressed: () => context.push(AppRoutes.bkMood),
+                            icon: const Icon(Icons.mood_outlined),
+                            label: const Text('Isi Mood Check-In'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(

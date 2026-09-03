@@ -8,10 +8,12 @@ import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/providers/auth_providers.dart';
 import '../features/counseling/presentation/pages/bk_appointments_page.dart';
+import '../features/counseling/presentation/pages/bk_mood_page.dart';
 import '../features/counseling/presentation/pages/bk_page.dart';
 import '../features/counseling/presentation/pages/bk_conversation_page.dart';
 import '../features/counseling/presentation/pages/counselor_appointments_page.dart';
 import '../features/counseling/presentation/pages/counselor_availability_page.dart';
+import '../features/counseling/presentation/pages/counselor_mood_history_page.dart';
 import '../features/create_post/presentation/pages/create_post_page.dart';
 import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
@@ -66,6 +68,12 @@ abstract final class AppRoutes {
 
   static const String counselorAppointments = '/bk/counselor/appointments';
   static const String counselorAppointmentsName = 'counselorAppointments';
+
+  static const String bkMood = '/bk/mood';
+  static const String bkMoodName = 'bkMood';
+
+  static const String counselorMoodHistory = '/bk/mood/:id';
+  static const String counselorMoodHistoryName = 'counselorMoodHistory';
 }
 
 /// Whether the given [location] is an auth route (login or register).
@@ -153,6 +161,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.counselorAppointments,
         name: AppRoutes.counselorAppointmentsName,
         builder: (context, state) => const CounselorAppointmentsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.bkMood,
+        name: AppRoutes.bkMoodName,
+        builder: (context, state) => const BkMoodPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.counselorMoodHistory,
+        name: AppRoutes.counselorMoodHistoryName,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return CounselorMoodHistoryPage(conversationId: id);
+        },
       ),
 
       // App shell with bottom navigation

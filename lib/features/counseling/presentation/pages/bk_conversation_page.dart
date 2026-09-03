@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../app/router.dart';
 import '../providers/counseling_providers.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 
@@ -155,6 +157,20 @@ class _BkConversationPageState extends ConsumerState<BkConversationPage> {
                             child: const Text('Percakapan ini telah selesai. Kamu hanya dapat membaca riwayat.', style: TextStyle(fontStyle: FontStyle.italic)),
                           ),
                         ],
+                        // Counselor mood history button
+                        profileAsync.maybeWhen(
+                          data: (p) => p?.isCounselor == true && c.status == 'assigned'
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => context.push('${AppRoutes.bkMood}/${c.id}'),
+                                    icon: const Icon(Icons.history, size: 16),
+                                    label: const Text('Lihat Riwayat Mood'),
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                          orElse: () => const SizedBox.shrink(),
+                        ),
                       ],
                     ),
                   ),
