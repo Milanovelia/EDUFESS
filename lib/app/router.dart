@@ -13,6 +13,7 @@ import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
 import '../features/feed/presentation/pages/post_detail_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
+import '../features/saved/presentation/pages/saved_page.dart';
 import 'app_shell.dart';
 
 /// Route paths and names. Keep string literals in one place only.
@@ -42,6 +43,9 @@ abstract final class AppRoutes {
   static const String postDetailBase = '/post';
   static const String postDetail = '/post/:id';
   static const String postDetailName = 'postDetail';
+
+  static const String saved = '/saved';
+  static const String savedName = 'saved';
 }
 
 /// Whether the given [location] is an auth route (login or register).
@@ -96,6 +100,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id']!;
           return PostDetailPage(postId: id);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.saved,
+        name: AppRoutes.savedName,
+        builder: (context, state) => const SavedPage(),
       ),
 
       // App shell with bottom navigation

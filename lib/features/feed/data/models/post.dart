@@ -20,6 +20,12 @@ class Post {
     this.topicSlug,
     required this.createdAt,
     required this.updatedAt,
+    this.helpfulCount = 0,
+    this.currentUserHelpful = false,
+    this.currentUserBookmarked = false,
+    this.commentCount = 0,
+    this.hasBestAnswer = false,
+    this.authorId,
   });
 
   factory Post.fromMap(Map<String, dynamic> map) {
@@ -38,6 +44,12 @@ class Post {
       topicSlug: map['topic_slug'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
+      helpfulCount: (map['helpful_count'] as int?) ?? 0,
+      currentUserHelpful: map['current_user_helpful'] as bool? ?? false,
+      currentUserBookmarked: map['current_user_bookmarked'] as bool? ?? false,
+      commentCount: (map['comment_count'] as int?) ?? 0,
+      hasBestAnswer: map['has_best_answer'] as bool? ?? false,
+      authorId: map['author_id'] as String?,
     );
   }
 
@@ -55,6 +67,12 @@ class Post {
   final String? topicSlug;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final int helpfulCount;
+  final bool currentUserHelpful;
+  final bool currentUserBookmarked;
+  final int commentCount;
+  final bool hasBestAnswer;
+  final String? authorId;
 
   /// Short preview for feed cards (max 120 chars).
   String get preview {

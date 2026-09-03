@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/supabase_providers.dart';
+import '../../data/models/comment.dart';
 import '../../data/models/post.dart';
 import '../../data/models/subject.dart';
 import '../../data/models/topic.dart';
@@ -53,3 +54,110 @@ final feedPostsProvider = FutureProvider<List<Post>>((ref) async {
 final postDetailProvider = FutureProvider.family<Post?, String>((ref, id) async {
   return ref.watch(feedRepositoryProvider).fetchPostById(id);
 });
+
+final commentsProvider = FutureProvider.family<List<Comment>, String>((ref, postId) async {
+  return ref.watch(feedRepositoryProvider).fetchComments(postId);
+});
+
+final savedPostsProvider = FutureProvider<List<Post>>((ref) async {
+  try {
+    return await ref.watch(feedRepositoryProvider).fetchBookmarkedPostsFallback();
+  } catch (_) {
+    return ref.watch(feedRepositoryProvider).fetchBookmarkedPosts();
+  }
+});
+
+class PostInteractionController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  Future<String?> toggleHelpful(Post post) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(feedRepositoryProvider).toggleHelpful(post.id, post.currentUserHelpful);
+      ref.invalidate(feedPostsProvider);
+      ref.invalidate(postDetailProvider(post.id));
+      ref.invalidate(savedPostsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = translateHelpfulError(e);
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> toggleBookmark(Post post) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(feedRepositoryProvider).toggleBookmark(post.id, post.currentUserBookmarked);
+      ref.invalidate(feedPostsProvider);
+      ref.invalidate(postDetailProvider(post.id));
+      ref.invalidate(savedPostsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = translateBookmarkError(e);
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> createComment({
+    required String postId,
+    String? parentId,
+    required String content,
+    required bool isPseudonymous,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(feedRepositoryProvider).createComment(
+            postId: postId,
+            parentId: parentId,
+            content: content,
+            isPseudonymous: isPseudonymous,
+          );
+      ref.invalidate(commentsProvider(postId));
+      ref.invalidate(feedPostsProvider);
+      ref.invalidate(postDetailProvider(postId));
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = translateCommentError(e);
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> deleteComment({required String commentId, required String postId}) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(feedRepositoryProvider).softDeleteComment(commentId);
+      ref.invalidate(commentsProvider(postId));
+      ref.invalidate(feedPostsProvider);
+      ref.invalidate(postDetailProvider(postId));
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      state = AsyncError(e.toString(), StackTrace.current);
+      return 'Gagal menghapus komentar.';
+    }
+  }
+
+  Future<String?> markBestAnswer({required String commentId, required String postId, required bool isBest}) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(feedRepositoryProvider).markBestAnswer(commentId: commentId, isBest: isBest);
+      ref.invalidate(commentsProvider(postId));
+      ref.invalidate(postDetailProvider(postId));
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = translateBestAnswerError(e);
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+}
+
+final postInteractionProvider = NotifierProvider<PostInteractionController, AsyncValue<void>>(PostInteractionController.new);

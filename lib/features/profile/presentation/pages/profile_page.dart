@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../app/router.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 
 /// Profile tab showing current user info and logout.
@@ -87,6 +90,13 @@ class ProfilePage extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
               const Divider(),
+              ListTile(
+                leading: const Icon(Icons.bookmark_outline),
+                title: const Text('Tersimpan'),
+                subtitle: const Text('Postingan yang kamu simpan'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(AppRoutes.saved),
+              ),
               ListTile(
                 leading: const Icon(Icons.info_outline),
                 title: const Text('Tentang EduFess'),
