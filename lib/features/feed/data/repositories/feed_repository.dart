@@ -60,6 +60,36 @@ class FeedRepository {
   }
 
   // --------------------------------------------------------------------------
+  // Search — privacy-safe RPC (M4)
+  // --------------------------------------------------------------------------
+
+  /// Privacy-safe search via `search_posts` RPC.
+  ///
+  /// Returns display_author already resolved server-side.
+  /// Filters are optional and combine with AND.
+  Future<List<Post>> searchPosts({
+    String? query,
+    String? subjectId,
+    String? topicId,
+    String? postType,
+    String sort = 'terbaru',
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final data = await _client.rpc('search_posts', params: {
+      'p_query': query,
+      'p_subject_id': subjectId,
+      'p_topic_id': topicId,
+      'p_post_type': postType,
+      'p_sort': sort,
+      'p_limit': limit,
+      'p_offset': offset,
+    });
+    final list = data as List;
+    return list.map((e) => Post.fromMap(e as Map<String, dynamic>)).toList();
+  }
+
+  // --------------------------------------------------------------------------
   // Create post (writes to base table; RLS + trigger enforce author/alias)
   // --------------------------------------------------------------------------
 
@@ -251,4 +281,11 @@ String translateBestAnswerError(Object error) {
   if (msg.contains('duplicate') || msg.contains('unique')) return 'Sudah ada jawaban terbaik untuk post ini.';
   if (msg.contains('comment from other post') || msg.contains('does not belong')) return 'Komentar tidak sesuai dengan post.';
   return 'Jawaban terbaik gagal diperbarui.';
+}
+
+String translateSearchError(Object error) {
+  final msg = error.toString().toLowerCase();
+  if (msg.contains('not authenticated')) return 'Harus login untuk mencari.';
+  if (msg.contains('invalid post type')) return 'Tipe post tidak valid.';
+  return 'Pencarian gagal. Coba lagi.';
 }
