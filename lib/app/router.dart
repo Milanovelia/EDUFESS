@@ -8,6 +8,7 @@ import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/providers/auth_providers.dart';
 import '../features/counseling/presentation/pages/bk_page.dart';
+import '../features/counseling/presentation/pages/bk_conversation_page.dart';
 import '../features/create_post/presentation/pages/create_post_page.dart';
 import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
@@ -50,6 +51,9 @@ abstract final class AppRoutes {
 
   static const String moderation = '/admin/moderation';
   static const String moderationName = 'moderation';
+
+  static const String bkConversation = '/bk/:id';
+  static const String bkConversationName = 'bkConversation';
 }
 
 /// Whether the given [location] is an auth route (login or register).
@@ -114,6 +118,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.moderation,
         name: AppRoutes.moderationName,
         builder: (context, state) => const ModerationPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.bkConversation,
+        name: AppRoutes.bkConversationName,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return BkConversationPage(conversationId: id);
+        },
       ),
 
       // App shell with bottom navigation
