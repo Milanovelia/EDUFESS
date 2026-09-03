@@ -8,11 +8,15 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return NotificationRepository(ref.watch(supabaseClientProvider));
 });
 
-final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
-  return ref.watch(notificationRepositoryProvider).fetchMyNotifications(limit: 50, offset: 0);
-});
+final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>(
+  (ref) async {
+    return ref
+        .watch(notificationRepositoryProvider)
+        .fetchMyNotifications(limit: 50, offset: 0);
+  },
+);
 
-final unreadCountProvider = FutureProvider<int>((ref) async {
+final unreadCountProvider = FutureProvider.autoDispose<int>((ref) async {
   return ref.watch(notificationRepositoryProvider).fetchUnreadCount();
 });
 
@@ -50,4 +54,7 @@ class NotificationController extends Notifier<AsyncValue<void>> {
   }
 }
 
-final notificationControllerProvider = NotifierProvider<NotificationController, AsyncValue<void>>(NotificationController.new);
+final notificationControllerProvider =
+    NotifierProvider<NotificationController, AsyncValue<void>>(
+      NotificationController.new,
+    );

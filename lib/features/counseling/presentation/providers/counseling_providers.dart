@@ -10,77 +10,108 @@ final counselingRepositoryProvider = Provider<CounselingRepository>((ref) {
   return CounselingRepository(ref.watch(supabaseClientProvider));
 });
 
-final hasBkConsentProvider = FutureProvider<bool>((ref) async {
+final hasBkConsentProvider = FutureProvider.autoDispose<bool>((ref) async {
   return ref.watch(counselingRepositoryProvider).hasActiveConsent();
 });
 
-final studentConversationsProvider = FutureProvider<List<BkConversation>>((ref) async {
-  return ref.watch(counselingRepositoryProvider).fetchStudentConversations();
-});
+final studentConversationsProvider =
+    FutureProvider.autoDispose<List<BkConversation>>((ref) async {
+      return ref
+          .watch(counselingRepositoryProvider)
+          .fetchStudentConversations();
+    });
 
-final counselorQueueProvider = FutureProvider<List<BkConversation>>((ref) async {
-  return ref.watch(counselingRepositoryProvider).fetchCounselorQueue();
-});
+final counselorQueueProvider = FutureProvider.autoDispose<List<BkConversation>>(
+  (ref) async {
+    return ref.watch(counselingRepositoryProvider).fetchCounselorQueue();
+  },
+);
 
-final counselorAssignedProvider = FutureProvider<List<BkConversation>>((ref) async {
-  return ref.watch(counselingRepositoryProvider).fetchCounselorAssigned();
-});
+final counselorAssignedProvider =
+    FutureProvider.autoDispose<List<BkConversation>>((ref) async {
+      return ref.watch(counselingRepositoryProvider).fetchCounselorAssigned();
+    });
 
-final counselingMessagesProvider = FutureProvider.family<List<BkMessage>, String>((ref, conversationId) async {
-  return ref.watch(counselingRepositoryProvider).fetchMessages(conversationId);
-});
+final counselingMessagesProvider = FutureProvider.family
+    .autoDispose<List<BkMessage>, String>((ref, conversationId) async {
+      return ref
+          .watch(counselingRepositoryProvider)
+          .fetchMessages(conversationId);
+    });
 
-final studentMoodHistoryProvider = FutureProvider<List<BkMoodCheckin>>((ref) async {
-  return ref.watch(counselingRepositoryProvider).fetchStudentMoodHistory(limit: 30, offset: 0);
-});
+final studentMoodHistoryProvider =
+    FutureProvider.autoDispose<List<BkMoodCheckin>>((ref) async {
+      return ref
+          .watch(counselingRepositoryProvider)
+          .fetchStudentMoodHistory(limit: 30, offset: 0);
+    });
 
-final counselorMoodHistoryProvider = FutureProvider.family<List<BkMoodCheckin>, String>((ref, conversationId) async {
-  return ref.watch(counselingRepositoryProvider).fetchCounselorStudentMoodHistory(conversationId: conversationId, limit: 30, offset: 0);
-});
+final counselorMoodHistoryProvider = FutureProvider.family
+    .autoDispose<List<BkMoodCheckin>, String>((ref, conversationId) async {
+      return ref
+          .watch(counselingRepositoryProvider)
+          .fetchCounselorStudentMoodHistory(
+            conversationId: conversationId,
+            limit: 30,
+            offset: 0,
+          );
+    });
 
-final availableSlotsProvider = FutureProvider<List<CounselorSlot>>((ref) async {
+final availableSlotsProvider = FutureProvider.autoDispose<List<CounselorSlot>>((
+  ref,
+) async {
   return ref.watch(counselingRepositoryProvider).fetchAvailableSlots();
 });
 
-final studentAppointmentsProvider = FutureProvider<List<BkAppointment>>((ref) async {
-  return ref.watch(counselingRepositoryProvider).fetchStudentAppointments();
-});
+final studentAppointmentsProvider =
+    FutureProvider.autoDispose<List<BkAppointment>>((ref) async {
+      return ref.watch(counselingRepositoryProvider).fetchStudentAppointments();
+    });
 
-final counselorAppointmentsProvider = FutureProvider<List<BkAppointment>>((ref) async {
-  return ref.watch(counselingRepositoryProvider).fetchCounselorAppointments();
-});
+final counselorAppointmentsProvider =
+    FutureProvider.autoDispose<List<BkAppointment>>((ref) async {
+      return ref
+          .watch(counselingRepositoryProvider)
+          .fetchCounselorAppointments();
+    });
 
-final myAvailabilityProvider = FutureProvider<List<CounselorAvailability>>((ref) async {
-  return ref.watch(counselingRepositoryProvider).fetchMyAvailability();
-});
+final myAvailabilityProvider =
+    FutureProvider.autoDispose<List<CounselorAvailability>>((ref) async {
+      return ref.watch(counselingRepositoryProvider).fetchMyAvailability();
+    });
 
-final bkConversationProvider = FutureProvider.family<BkConversation?, String>((ref, id) async {
-  final repo = ref.watch(counselingRepositoryProvider);
-  // Try student list first, then counselor, then direct fetch
-  try {
-    final list = await repo.fetchStudentConversations();
-    for (final c in list) {
-      if (c.id == id) return c;
-    }
-  } catch (_) {}
-  try {
-    final queue = await repo.fetchCounselorQueue();
-    for (final c in queue) {
-      if (c.id == id) return c;
-    }
-  } catch (_) {}
-  try {
-    final assigned = await repo.fetchCounselorAssigned();
-    for (final c in assigned) {
-      if (c.id == id) return c;
-    }
-  } catch (_) {}
-  // Fallback direct (participant can select own via RLS)
-  final client = ref.watch(supabaseClientProvider);
-  final data = await client.from('counseling_conversations').select().eq('id', id).maybeSingle();
-  if (data == null) return null;
-  return BkConversation.fromMap(data);
-});
+final bkConversationProvider = FutureProvider.family
+    .autoDispose<BkConversation?, String>((ref, id) async {
+      final repo = ref.watch(counselingRepositoryProvider);
+      // Try student list first, then counselor, then direct fetch
+      try {
+        final list = await repo.fetchStudentConversations();
+        for (final c in list) {
+          if (c.id == id) return c;
+        }
+      } catch (_) {}
+      try {
+        final queue = await repo.fetchCounselorQueue();
+        for (final c in queue) {
+          if (c.id == id) return c;
+        }
+      } catch (_) {}
+      try {
+        final assigned = await repo.fetchCounselorAssigned();
+        for (final c in assigned) {
+          if (c.id == id) return c;
+        }
+      } catch (_) {}
+      // Fallback direct (participant can select own via RLS)
+      final client = ref.watch(supabaseClientProvider);
+      final data = await client
+          .from('counseling_conversations')
+          .select()
+          .eq('id', id)
+          .maybeSingle();
+      if (data == null) return null;
+      return BkConversation.fromMap(data);
+    });
 
 class CounselingController extends Notifier<AsyncValue<void>> {
   @override
@@ -94,7 +125,9 @@ class CounselingController extends Notifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal menyimpan persetujuan.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal menyimpan persetujuan.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
@@ -103,13 +136,17 @@ class CounselingController extends Notifier<AsyncValue<void>> {
   Future<String?> createConversation() async {
     state = const AsyncLoading();
     try {
-      final id = await ref.read(counselingRepositoryProvider).createConversation();
+      final id = await ref
+          .read(counselingRepositoryProvider)
+          .createConversation();
       ref.invalidate(studentConversationsProvider);
       ref.invalidate(counselorQueueProvider);
       state = const AsyncData(null);
       return id;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal membuat percakapan.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal membuat percakapan.';
       state = AsyncError(msg, StackTrace.current);
       return null;
     }
@@ -118,23 +155,32 @@ class CounselingController extends Notifier<AsyncValue<void>> {
   Future<String?> claim(String conversationId) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).claimConversation(conversationId);
+      await ref
+          .read(counselingRepositoryProvider)
+          .claimConversation(conversationId);
       ref.invalidate(counselorQueueProvider);
       ref.invalidate(counselorAssignedProvider);
       ref.invalidate(studentConversationsProvider);
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal mengklaim percakapan.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal mengklaim percakapan.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
   }
 
-  Future<String?> sendMessage({required String conversationId, required String content}) async {
+  Future<String?> sendMessage({
+    required String conversationId,
+    required String content,
+  }) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).sendMessage(conversationId: conversationId, content: content);
+      await ref
+          .read(counselingRepositoryProvider)
+          .sendMessage(conversationId: conversationId, content: content);
       ref.invalidate(counselingMessagesProvider(conversationId));
       state = const AsyncData(null);
       return null;
@@ -145,14 +191,21 @@ class CounselingController extends Notifier<AsyncValue<void>> {
     }
   }
 
-  Future<({String studentId, String pseudonym})?> reveal({required String conversationId, required String reason}) async {
+  Future<({String studentId, String pseudonym})?> reveal({
+    required String conversationId,
+    required String reason,
+  }) async {
     state = const AsyncLoading();
     try {
-      final res = await ref.read(counselingRepositoryProvider).revealIdentity(conversationId: conversationId, reason: reason);
+      final res = await ref
+          .read(counselingRepositoryProvider)
+          .revealIdentity(conversationId: conversationId, reason: reason);
       state = const AsyncData(null);
       return res;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Akses identitas gagal.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Akses identitas gagal.';
       state = AsyncError(msg, StackTrace.current);
       return null;
     }
@@ -161,7 +214,9 @@ class CounselingController extends Notifier<AsyncValue<void>> {
   Future<String?> close(String conversationId) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).closeConversation(conversationId);
+      await ref
+          .read(counselingRepositoryProvider)
+          .closeConversation(conversationId);
       ref.invalidate(counselorAssignedProvider);
       ref.invalidate(counselorQueueProvider);
       ref.invalidate(studentConversationsProvider);
@@ -170,16 +225,28 @@ class CounselingController extends Notifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal menyelesaikan percakapan.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal menyelesaikan percakapan.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
   }
 
-  Future<String?> createAvailability({required DateTime date, required String startTime, required String endTime}) async {
+  Future<String?> createAvailability({
+    required DateTime date,
+    required String startTime,
+    required String endTime,
+  }) async {
     state = const AsyncLoading();
     try {
-      final id = await ref.read(counselingRepositoryProvider).createAvailability(date: date, startTime: startTime, endTime: endTime);
+      final id = await ref
+          .read(counselingRepositoryProvider)
+          .createAvailability(
+            date: date,
+            startTime: startTime,
+            endTime: endTime,
+          );
       ref.invalidate(myAvailabilityProvider);
       ref.invalidate(availableSlotsProvider);
       state = const AsyncData(null);
@@ -191,10 +258,20 @@ class CounselingController extends Notifier<AsyncValue<void>> {
     }
   }
 
-  Future<String?> requestAppointment({required String availabilityId, String? studentNote, String? conversationId}) async {
+  Future<String?> requestAppointment({
+    required String availabilityId,
+    String? studentNote,
+    String? conversationId,
+  }) async {
     state = const AsyncLoading();
     try {
-      final id = await ref.read(counselingRepositoryProvider).requestAppointment(availabilityId: availabilityId, studentNote: studentNote, conversationId: conversationId);
+      final id = await ref
+          .read(counselingRepositoryProvider)
+          .requestAppointment(
+            availabilityId: availabilityId,
+            studentNote: studentNote,
+            conversationId: conversationId,
+          );
       ref.invalidate(studentAppointmentsProvider);
       ref.invalidate(counselorAppointmentsProvider);
       ref.invalidate(availableSlotsProvider);
@@ -210,22 +287,31 @@ class CounselingController extends Notifier<AsyncValue<void>> {
   Future<String?> acceptAppointment(String appointmentId) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).acceptAppointment(appointmentId);
+      await ref
+          .read(counselingRepositoryProvider)
+          .acceptAppointment(appointmentId);
       ref.invalidate(counselorAppointmentsProvider);
       ref.invalidate(studentAppointmentsProvider);
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal menerima janji.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal menerima janji.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
   }
 
-  Future<String?> rejectAppointment(String appointmentId, {String? reason}) async {
+  Future<String?> rejectAppointment(
+    String appointmentId, {
+    String? reason,
+  }) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).rejectAppointment(appointmentId, reason: reason);
+      await ref
+          .read(counselingRepositoryProvider)
+          .rejectAppointment(appointmentId, reason: reason);
       ref.invalidate(counselorAppointmentsProvider);
       ref.invalidate(studentAppointmentsProvider);
       state = const AsyncData(null);
@@ -237,16 +323,28 @@ class CounselingController extends Notifier<AsyncValue<void>> {
     }
   }
 
-  Future<String?> rescheduleAppointment({required String appointmentId, required DateTime newStart, required DateTime newEnd}) async {
+  Future<String?> rescheduleAppointment({
+    required String appointmentId,
+    required DateTime newStart,
+    required DateTime newEnd,
+  }) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).rescheduleAppointment(appointmentId: appointmentId, newStart: newStart, newEnd: newEnd);
+      await ref
+          .read(counselingRepositoryProvider)
+          .rescheduleAppointment(
+            appointmentId: appointmentId,
+            newStart: newStart,
+            newEnd: newEnd,
+          );
       ref.invalidate(counselorAppointmentsProvider);
       ref.invalidate(studentAppointmentsProvider);
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal mengatur ulang janji.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal mengatur ulang janji.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
@@ -255,30 +353,41 @@ class CounselingController extends Notifier<AsyncValue<void>> {
   Future<String?> cancelStudentAppointment(String appointmentId) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).cancelStudentAppointment(appointmentId);
+      await ref
+          .read(counselingRepositoryProvider)
+          .cancelStudentAppointment(appointmentId);
       ref.invalidate(studentAppointmentsProvider);
       ref.invalidate(counselorAppointmentsProvider);
       ref.invalidate(availableSlotsProvider);
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal membatalkan janji.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal membatalkan janji.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
   }
 
-  Future<String?> cancelCounselorAppointment(String appointmentId, {String? reason}) async {
+  Future<String?> cancelCounselorAppointment(
+    String appointmentId, {
+    String? reason,
+  }) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).cancelCounselorAppointment(appointmentId, reason: reason);
+      await ref
+          .read(counselingRepositoryProvider)
+          .cancelCounselorAppointment(appointmentId, reason: reason);
       ref.invalidate(counselorAppointmentsProvider);
       ref.invalidate(studentAppointmentsProvider);
       ref.invalidate(availableSlotsProvider);
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal membatalkan janji.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal membatalkan janji.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
@@ -287,13 +396,17 @@ class CounselingController extends Notifier<AsyncValue<void>> {
   Future<String?> completeAppointment(String appointmentId) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).completeAppointment(appointmentId);
+      await ref
+          .read(counselingRepositoryProvider)
+          .completeAppointment(appointmentId);
       ref.invalidate(counselorAppointmentsProvider);
       ref.invalidate(studentAppointmentsProvider);
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal menyelesaikan janji.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal menyelesaikan janji.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
@@ -307,18 +420,26 @@ class MoodController extends Notifier<AsyncValue<void>> {
   Future<String?> submit({required int moodLevel, String? note}) async {
     state = const AsyncLoading();
     try {
-      await ref.read(counselingRepositoryProvider).submitMoodCheckin(moodLevel: moodLevel, note: note);
+      await ref
+          .read(counselingRepositoryProvider)
+          .submitMoodCheckin(moodLevel: moodLevel, note: note);
       ref.invalidate(studentMoodHistoryProvider);
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is CounselingException ? e.message : 'Gagal menyimpan mood.';
+      final msg = e is CounselingException
+          ? e.message
+          : 'Gagal menyimpan mood.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
   }
 }
 
-final moodControllerProvider = NotifierProvider<MoodController, AsyncValue<void>>(MoodController.new);
+final moodControllerProvider =
+    NotifierProvider<MoodController, AsyncValue<void>>(MoodController.new);
 
-final counselingControllerProvider = NotifierProvider<CounselingController, AsyncValue<void>>(CounselingController.new);
+final counselingControllerProvider =
+    NotifierProvider<CounselingController, AsyncValue<void>>(
+      CounselingController.new,
+    );

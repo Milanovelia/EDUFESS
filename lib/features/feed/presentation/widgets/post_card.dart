@@ -27,36 +27,33 @@ class PostCard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.xs,
                 children: [
                   Chip(
                     label: Text(PostType.labels[post.type] ?? post.type, style: theme.textTheme.labelSmall),
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  const SizedBox(width: AppSpacing.sm),
                   Chip(
                     label: Text(post.subjectName, style: theme.textTheme.labelSmall),
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  if (post.topicName != null) ...[
-                    const SizedBox(width: AppSpacing.xs),
+                  if (post.topicName != null)
                     Chip(
                       label: Text(post.topicName!, style: theme.textTheme.labelSmall),
                       visualDensity: VisualDensity.compact,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                  ],
-                  if (post.hasBestAnswer) ...[
-                    const SizedBox(width: AppSpacing.xs),
+                  if (post.hasBestAnswer)
                     Chip(
                       label: Text('Terjawab', style: theme.textTheme.labelSmall?.copyWith(color: Colors.white)),
                       backgroundColor: Colors.green,
                       visualDensity: VisualDensity.compact,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                  ],
                 ],
               ),
               Row(
@@ -78,8 +75,7 @@ class PostCard extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
-                  Text(_timeAgo(post.createdAt), style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline)),
-                  const Spacer(),
+                  Expanded(child: Text(_timeAgo(post.createdAt), style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline), overflow: TextOverflow.ellipsis)),
                   _ActionIcon(
                     icon: post.currentUserHelpful ? Icons.favorite : Icons.favorite_border,
                     color: post.currentUserHelpful ? Colors.red : null,
@@ -91,9 +87,9 @@ class PostCard extends ConsumerWidget {
                       }
                     },
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.xs),
                   _ActionIcon(icon: Icons.chat_bubble_outline, label: '${post.commentCount}'),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.xs),
                   _ActionIcon(
                     icon: post.currentUserBookmarked ? Icons.bookmark : Icons.bookmark_border,
                     color: post.currentUserBookmarked ? theme.colorScheme.primary : null,

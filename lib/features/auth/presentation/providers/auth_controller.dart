@@ -77,10 +77,17 @@ class AuthController extends Notifier<AsyncValue<void>> {
     }
   }
 
-  /// Signs out the current user.
+  /// Signs out the current user and clears user-scoped state.
   Future<void> signOut() async {
     state = const AsyncLoading();
     await _repo.signOut();
+    // Invalidate user-scoped providers to prevent cross-user leakage
+    ref.invalidate(currentProfileProvider);
+    // Use try to avoid import cycles — providers will be invalidated via ref.invalidate if available
+    // Explicitly invalidate known user-scoped providers (best-effort, ignore if not found)
+    try {
+      ref.invalidate(currentSessionProvider);
+    } catch (_) {}
     state = const AsyncData(null);
   }
 }

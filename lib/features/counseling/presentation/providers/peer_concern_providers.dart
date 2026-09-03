@@ -8,40 +8,59 @@ final peerConcernRepositoryProvider = Provider<PeerConcernRepository>((ref) {
   return PeerConcernRepository(ref.watch(supabaseClientProvider));
 });
 
-final peerSearchProvider = FutureProvider.family<List<PeerStudent>, String>((ref, query) async {
-  if (query.trim().length < 2) return [];
-  return ref.watch(peerConcernRepositoryProvider).searchPeers(query, limit: 10);
-});
+final peerSearchProvider = FutureProvider.family
+    .autoDispose<List<PeerStudent>, String>((ref, query) async {
+      if (query.trim().length < 2) return [];
+      return ref
+          .watch(peerConcernRepositoryProvider)
+          .searchPeers(query, limit: 10);
+    });
 
-final studentPeerConcernsProvider = FutureProvider<List<BkPeerConcern>>((ref) async {
-  return ref.watch(peerConcernRepositoryProvider).fetchStudentHistory();
-});
+final studentPeerConcernsProvider =
+    FutureProvider.autoDispose<List<BkPeerConcern>>((ref) async {
+      return ref.watch(peerConcernRepositoryProvider).fetchStudentHistory();
+    });
 
-final counselorPeerConcernQueueProvider = FutureProvider<List<BkPeerConcern>>((ref) async {
-  return ref.watch(peerConcernRepositoryProvider).fetchCounselorQueue();
-});
+final counselorPeerConcernQueueProvider =
+    FutureProvider.autoDispose<List<BkPeerConcern>>((ref) async {
+      return ref.watch(peerConcernRepositoryProvider).fetchCounselorQueue();
+    });
 
-final counselorPeerConcernHistoryProvider = FutureProvider<List<BkPeerConcern>>((ref) async {
-  return ref.watch(peerConcernRepositoryProvider).fetchCounselorHistory();
-});
+final counselorPeerConcernHistoryProvider =
+    FutureProvider.autoDispose<List<BkPeerConcern>>((ref) async {
+      return ref.watch(peerConcernRepositoryProvider).fetchCounselorHistory();
+    });
 
-final peerConcernDetailProvider = FutureProvider.family<BkPeerConcern, String>((ref, id) async {
-  return ref.watch(peerConcernRepositoryProvider).fetchDetail(id);
-});
+final peerConcernDetailProvider = FutureProvider.family
+    .autoDispose<BkPeerConcern, String>((ref, id) async {
+      return ref.watch(peerConcernRepositoryProvider).fetchDetail(id);
+    });
 
 class PeerConcernController extends Notifier<AsyncValue<void>> {
   @override
   AsyncValue<void> build() => const AsyncData(null);
 
-  Future<String?> submit({required String targetRef, required String reason, String? details}) async {
+  Future<String?> submit({
+    required String targetRef,
+    required String reason,
+    String? details,
+  }) async {
     state = const AsyncLoading();
     try {
-      await ref.read(peerConcernRepositoryProvider).submit(targetStudentRef: targetRef, reason: reason, details: details);
+      await ref
+          .read(peerConcernRepositoryProvider)
+          .submit(
+            targetStudentRef: targetRef,
+            reason: reason,
+            details: details,
+          );
       ref.invalidate(studentPeerConcernsProvider);
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is PeerConcernException ? e.message : 'Gagal mengirim kepedulian.';
+      final msg = e is PeerConcernException
+          ? e.message
+          : 'Gagal mengirim kepedulian.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
@@ -72,7 +91,9 @@ class PeerConcernController extends Notifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return null;
     } catch (e) {
-      final msg = e is PeerConcernException ? e.message : 'Gagal menyelesaikan.';
+      final msg = e is PeerConcernException
+          ? e.message
+          : 'Gagal menyelesaikan.';
       state = AsyncError(msg, StackTrace.current);
       return msg;
     }
@@ -95,4 +116,7 @@ class PeerConcernController extends Notifier<AsyncValue<void>> {
   }
 }
 
-final peerConcernControllerProvider = NotifierProvider<PeerConcernController, AsyncValue<void>>(PeerConcernController.new);
+final peerConcernControllerProvider =
+    NotifierProvider<PeerConcernController, AsyncValue<void>>(
+      PeerConcernController.new,
+    );
