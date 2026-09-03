@@ -56,11 +56,6 @@ final bkConversationProvider = FutureProvider.family<BkConversation?, String>((r
   return BkConversation.fromMap(data);
 });
 
-// For role-based UI
-final currentProfileForBkProvider = FutureProvider((ref) async {
-  return ref.watch(counselingRepositoryProvider).hasActiveConsent(); // placeholder, actual profile from auth_controller
-});
-
 class CounselingController extends Notifier<AsyncValue<void>> {
   @override
   AsyncValue<void> build() => const AsyncData(null);
@@ -134,6 +129,24 @@ class CounselingController extends Notifier<AsyncValue<void>> {
       final msg = e is CounselingException ? e.message : 'Akses identitas gagal.';
       state = AsyncError(msg, StackTrace.current);
       return null;
+    }
+  }
+
+  Future<String?> close(String conversationId) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).closeConversation(conversationId);
+      ref.invalidate(counselorAssignedProvider);
+      ref.invalidate(counselorQueueProvider);
+      ref.invalidate(studentConversationsProvider);
+      ref.invalidate(bkConversationProvider(conversationId));
+      ref.invalidate(counselingMessagesProvider(conversationId));
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal menyelesaikan percakapan.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
     }
   }
 }

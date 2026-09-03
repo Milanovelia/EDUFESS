@@ -309,7 +309,7 @@ class _CounselorBkView extends ConsumerWidget {
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Center(child: Padding(padding: const EdgeInsets.all(AppSpacing.lg), child: Text('Gagal memuat antrean: ${e.toString().replaceAll('CounselingException: ', '')}', textAlign: TextAlign.center))),
                   data: (list) {
-                    if (list.isEmpty) return const Center(child: Text('Tidak ada antrean.'));
+                    if (list.isEmpty) return const Center(child: Text('Tidak ada percakapan yang menunggu.'));
                     return RefreshIndicator(
                       onRefresh: () async => ref.invalidate(counselorQueueProvider),
                       child: ListView.builder(
@@ -319,18 +319,25 @@ class _CounselorBkView extends ConsumerWidget {
                           return ListTile(
                             leading: const Icon(Icons.person_outline),
                             title: Text(conv.studentAlias),
-                            subtitle: Text('${conv.status} • ${_timeAgo(conv.createdAt)}'),
-                            trailing: FilledButton(
-                              onPressed: () async {
-                                final err = await ref.read(counselingControllerProvider.notifier).claim(conv.id);
-                                if (err != null && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
-                                } else if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Percakapan diklaim.')));
-                                }
-                              },
-                              child: const Text('Klaim'),
-                            ),
+                            subtitle: Text('Menunggu penanganan • ${_timeAgo(conv.createdAt)}'),
+                            trailing: Consumer(builder: (context, ref, _) {
+                              final loading = ref.watch(counselingControllerProvider).isLoading;
+                              return FilledButton(
+                                onPressed: loading
+                                    ? null
+                                    : () async {
+                                        final err = await ref.read(counselingControllerProvider.notifier).claim(conv.id);
+                                        if (err != null && context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                                        } else if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Percakapan diklaim.')));
+                                          ref.invalidate(counselorAssignedProvider);
+                                          if (context.mounted) context.push('${AppRoutes.bk}/${conv.id}');
+                                        }
+                                      },
+                                child: const Text('Tangani'),
+                              );
+                            }),
                             onTap: () => context.push('${AppRoutes.bk}/${conv.id}'),
                           );
                         },
@@ -342,21 +349,42 @@ class _CounselorBkView extends ConsumerWidget {
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Center(child: Text('Gagal memuat: ${e.toString().replaceAll('CounselingException: ', '')}')),
                   data: (list) {
-                    if (list.isEmpty) return const Center(child: Text('Belum ada percakapan yang ditangani.'));
+                    if (list.isEmpty) return const Center(child: Text('Belum ada percakapan yang sedang kamu tangani.'));
+                    final active = list.where((c) => c.status == 'assigned').toList();
+                    final history = list.where((c) => c.status == 'closed').toList();
                     return RefreshIndicator(
                       onRefresh: () async => ref.invalidate(counselorAssignedProvider),
-                      child: ListView.builder(
-                        itemCount: list.length,
-                        itemBuilder: (c, i) {
-                          final conv = list[i];
-                          return ListTile(
-                            leading: const Icon(Icons.chat),
-                            title: Text(conv.studentAlias),
-                            subtitle: Text(_statusLabel(conv.status)),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => context.push('${AppRoutes.bk}/${conv.id}'),
-                          );
-                        },
+                      child: ListView(
+                        children: [
+                          if (active.isNotEmpty) ...[
+                            const Padding(padding: EdgeInsets.all(AppSpacing.md), child: Text('Aktif', style: TextStyle(fontWeight: FontWeight.w600))),
+                            ...active.map((conv) => ListTile(
+                                  leading: const Icon(Icons.chat),
+                                  title: Text(conv.studentAlias),
+                                  subtitle: Text('${_statusLabel(conv.status)} • ${_timeAgo(conv.updatedAt)}'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => context.push('${AppRoutes.bk}/${conv.id}'),
+                                )),
+                          ],
+                          if (history.isNotEmpty) ...[
+                            const Padding(padding: EdgeInsets.all(AppSpacing.md), child: Text('Riwayat', style: TextStyle(fontWeight: FontWeight.w600))),
+                            ...history.map((conv) => ListTile(
+                                  leading: const Icon(Icons.history, color: Colors.grey),
+                                  title: Text(conv.studentAlias),
+                                  subtitle: Text('Selesai • ${_timeAgo(conv.closedAt ?? conv.updatedAt)}'),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => context.push('${AppRoutes.bk}/${conv.id}'),
+                                )),
+                          ],
+                          if (active.isEmpty && history.isEmpty)
+                            ...list.map((conv) => ListTile(
+                                  leading: const Icon(Icons.chat),
+                                  title: Text(conv.studentAlias),
+                                  subtitle: Text(_statusLabel(conv.status)),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => context.push('${AppRoutes.bk}/${conv.id}'),
+                                )),
+                        ],
                       ),
                     );
                   },

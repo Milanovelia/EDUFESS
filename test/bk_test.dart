@@ -159,12 +159,13 @@ void main() {
           overrides: [
             currentProfileProvider.overrideWith((ref) async => const UserProfile(id: '1', pseudonym: 'c1', role: 'counselor')),
             counselingMessagesProvider.overrideWith((ref, id) async => []),
+            bkConversationProvider.overrideWith((ref, id) async => _conv('conv1', 'Siswa BK #A1B2', 'assigned')),
           ],
           child: const MaterialApp(home: BkConversationPage(conversationId: 'conv1')),
         ),
       );
       await tester.pump();
-      expect(find.byIcon(Icons.visibility), findsOneWidget);
+      expect(find.byType(PopupMenuButton<String>), findsOneWidget);
     });
 
     testWidgets('student does not see reveal', (tester) async {
@@ -173,12 +174,13 @@ void main() {
           overrides: [
             currentProfileProvider.overrideWith((ref) async => const UserProfile(id: '1', pseudonym: 's1', role: 'student')),
             counselingMessagesProvider.overrideWith((ref, id) async => []),
+            bkConversationProvider.overrideWith((ref, id) async => _conv('conv1', 'Siswa BK #A1B2', 'open')),
           ],
           child: const MaterialApp(home: BkConversationPage(conversationId: 'conv1')),
         ),
       );
       await tester.pump();
-      expect(find.byIcon(Icons.visibility), findsNothing);
+      expect(find.byType(PopupMenuButton<String>), findsNothing);
     });
 
     testWidgets('reveal requires reason', (tester) async {
@@ -187,16 +189,19 @@ void main() {
           overrides: [
             currentProfileProvider.overrideWith((ref) async => const UserProfile(id: '1', pseudonym: 'c1', role: 'counselor')),
             counselingMessagesProvider.overrideWith((ref, id) async => []),
+            bkConversationProvider.overrideWith((ref, id) async => _conv('conv1', 'Siswa BK #A1B2', 'assigned')),
           ],
           child: const MaterialApp(home: BkConversationPage(conversationId: 'conv1')),
         ),
       );
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.visibility));
+      await tester.tap(find.byType(PopupMenuButton<String>));
       await tester.pumpAndSettle();
-      expect(find.text('Akses Identitas'), findsOneWidget);
-      expect(find.text('Alasan *'), findsOneWidget);
-      await tester.tap(find.text('Konfirmasi'));
+      await tester.tap(find.text('Buka Identitas'));
+      await tester.pumpAndSettle();
+      expect(find.text('Buka Identitas Siswa'), findsOneWidget);
+      expect(find.text('Alasan akses *'), findsOneWidget);
+      await tester.tap(find.text('Buka Identitas').last);
       await tester.pump();
       expect(find.text('Alasan wajib diisi.'), findsOneWidget);
     });

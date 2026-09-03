@@ -112,10 +112,17 @@ class CounselingRepository {
   }
 
   Future<List<BkConversation>> fetchCounselorAssigned() async {
-    final user = _client.auth.currentUser;
-    if (user == null) return [];
-    final data = await _client.from('counseling_conversations').select().eq('counselor_id', user.id).order('created_at', ascending: false);
-    return (data as List).map((e) => BkConversation.fromMap(e as Map<String, dynamic>)).toList();
+    try {
+      final data = await _client.rpc('get_counselor_assigned_conversations');
+      final list = data as List;
+      return list.map((e) => BkConversation.fromQueueMap(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      // fallback direct for older M6 (should not happen)
+      final user = _client.auth.currentUser;
+      if (user == null) return [];
+      final data = await _client.from('counseling_conversations').select().eq('counselor_id', user.id).order('created_at', ascending: false);
+      return (data as List).map((e) => BkConversation.fromMap(e as Map<String, dynamic>)).toList();
+    }
   }
 
   Future<void> claimConversation(String conversationId) async {
@@ -123,6 +130,14 @@ class CounselingRepository {
       await _client.rpc('claim_counseling_conversation', params: {'p_conversation_id': conversationId});
     } catch (e) {
       throw CounselingException(_translateClaimError(e));
+    }
+  }
+
+  Future<void> closeConversation(String conversationId) async {
+    try {
+      await _client.rpc('close_counseling_conversation', params: {'p_conversation_id': conversationId});
+    } catch (e) {
+      throw CounselingException(_translateCloseError(e));
     }
   }
 
@@ -213,6 +228,17 @@ class CounselingRepository {
     if (m.contains('not authorized')) return 'Tidak memiliki akses.';
     if (m.contains('not authenticated')) return 'Harus login.';
     return 'Akses identitas gagal.';
+  }
+
+  String _translateCloseError(Object e) {
+    final m = e.toString().toLowerCase();
+    if (m.contains('not assigned')) return 'Kamu bukan konselor yang menangani percakapan ini.';
+    if (m.contains('already closed')) return 'Percakapan sudah selesai.';
+    if (m.contains('only assigned')) return 'Hanya percakapan yang ditangani bisa diselesaikan.';
+    if (m.contains('not authorized')) return 'Tidak memiliki akses.';
+    if (m.contains('not authenticated')) return 'Harus login.';
+    if (m.contains('not found')) return 'Percakapan tidak ditemukan.';
+    return 'Gagal menyelesaikan percakapan.';
   }
 }
 

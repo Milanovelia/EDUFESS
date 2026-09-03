@@ -52,50 +52,82 @@ class _BkConversationPageState extends ConsumerState<BkConversationPage> {
         ),
         actions: [
           profileAsync.maybeWhen(
-            data: (p) => p?.isCounselor == true
-                ? IconButton(
-                    icon: const Icon(Icons.visibility),
-                    tooltip: 'Reveal identity',
-                    onPressed: () async {
-                      final reasonCtrl = TextEditingController();
-                      final reason = await showDialog<String>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Akses Identitas'),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('Akses identitas siswa akan dicatat untuk keperluan audit.'),
-                              const SizedBox(height: AppSpacing.md),
-                              TextField(controller: reasonCtrl, decoration: const InputDecoration(labelText: 'Alasan *', border: OutlineInputBorder()), maxLines: 2),
+            data: (p) {
+              if (p?.isCounselor != true) return const SizedBox.shrink();
+              return convAsync.maybeWhen(
+                data: (c) {
+                  if (c == null) return const SizedBox.shrink();
+                  final isClosed = c.isClosed;
+                  return PopupMenuButton<String>(
+                    onSelected: (v) async {
+                      if (v == 'reveal') {
+                        final reasonCtrl = TextEditingController();
+                        final reason = await showDialog<String>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Buka Identitas Siswa'),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('Akses identitas siswa akan dicatat untuk keperluan audit.'),
+                                const SizedBox(height: AppSpacing.md),
+                                TextField(controller: reasonCtrl, decoration: const InputDecoration(labelText: 'Alasan akses *', border: OutlineInputBorder(), hintText: 'Kebutuhan pendampingan'), maxLines: 2, maxLength: 500),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+                              FilledButton(
+                                  onPressed: () {
+                                    if (reasonCtrl.text.trim().isEmpty) {
+                                      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Alasan wajib diisi.')));
+                                      return;
+                                    }
+                                    Navigator.pop(ctx, reasonCtrl.text.trim());
+                                  },
+                                  child: const Text('Buka Identitas')),
                             ],
                           ),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-                            FilledButton(
-                                onPressed: () {
-                                  if (reasonCtrl.text.trim().isEmpty) {
-                                    ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Alasan wajib diisi.')));
-                                    return;
-                                  }
-                                  Navigator.pop(ctx, reasonCtrl.text.trim());
-                                },
-                                child: const Text('Konfirmasi')),
-                          ],
-                        ),
-                      );
-                      if (reason == null) return;
-                      final res = await ref.read(counselingControllerProvider.notifier).reveal(conversationId: widget.conversationId, reason: reason);
-                      if (res != null && context.mounted) {
-                        setState(() => _revealedPseudonym = res.pseudonym);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Identitas: ${res.pseudonym}')));
-                      } else if (context.mounted) {
-                        final err = ref.read(counselingControllerProvider).maybeWhen(error: (e, _) => e.toString(), orElse: () => 'Akses identitas gagal.');
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err.replaceAll('CounselingException: ', ''))));
+                        );
+                        if (reason == null) return;
+                        final res = await ref.read(counselingControllerProvider.notifier).reveal(conversationId: widget.conversationId, reason: reason);
+                        if (res != null && context.mounted) {
+                          setState(() => _revealedPseudonym = res.pseudonym);
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Identitas telah dibuka\nPseudonim: ${res.pseudonym}')));
+                        } else if (context.mounted) {
+                          final err = ref.read(counselingControllerProvider).maybeWhen(error: (e, _) => e.toString(), orElse: () => 'Akses identitas gagal.');
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err.replaceAll('CounselingException: ', ''))));
+                        }
+                      } else if (v == 'close' && !isClosed) {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Selesaikan Percakapan'),
+                            content: const Text('Percakapan yang diselesaikan tetap dapat dibaca, tetapi tidak dapat menerima pesan baru.'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Selesaikan')),
+                            ],
+                          ),
+                        );
+                        if (confirm != true) return;
+                        final err = await ref.read(counselingControllerProvider.notifier).close(widget.conversationId);
+                        if (err != null && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                        } else if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Percakapan diselesaikan.')));
+                          ref.invalidate(bkConversationProvider(widget.conversationId));
+                        }
                       }
                     },
-                  )
-                : const SizedBox.shrink(),
+                    itemBuilder: (c) => [
+                      const PopupMenuItem(value: 'reveal', child: Text('Buka Identitas')),
+                      if (!isClosed) const PopupMenuItem(value: 'close', child: Text('Selesaikan Percakapan')),
+                    ],
+                  );
+                },
+                orElse: () => const SizedBox.shrink(),
+              );
+            },
             orElse: () => const SizedBox.shrink(),
           ),
         ],
