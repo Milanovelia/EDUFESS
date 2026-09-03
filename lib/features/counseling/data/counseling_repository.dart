@@ -49,7 +49,41 @@ class CounselingRepository {
           .single();
       return data['id'] as String;
     } catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('sudah memiliki percakapan aktif') || msg.contains('one_active') || msg.contains('duplicate')) {
+        // Try to return existing active conversation
+        try {
+          final existing = await _client
+              .from('counseling_conversations')
+              .select('id')
+              .eq('student_id', user.id)
+              .inFilter('status', ['open', 'assigned'])
+              .order('updated_at', ascending: false)
+              .limit(1)
+              .maybeSingle();
+          if (existing != null) return existing['id'] as String;
+        } catch (_) {}
+      }
       throw CounselingException(_translateConversationError(e));
+    }
+  }
+
+  Future<BkConversation?> getActiveConversation() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return null;
+    try {
+      final data = await _client
+          .from('counseling_conversations')
+          .select()
+          .eq('student_id', user.id)
+          .inFilter('status', ['open', 'assigned'])
+          .order('updated_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      if (data == null) return null;
+      return BkConversation.fromMap(data);
+    } catch (_) {
+      return null;
     }
   }
 

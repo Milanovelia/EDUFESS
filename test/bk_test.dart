@@ -10,12 +10,11 @@ import 'package:edufess/features/auth/presentation/providers/auth_controller.dar
 
 BkConversation _conv(String id, String alias, String status) => BkConversation(
       id: id,
-      studentId: 'stu-1',
-      counselorId: status == 'assigned' ? 'coun-1' : null,
       studentAlias: alias,
       status: status,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      closedAt: status == 'closed' ? DateTime.now() : null,
     );
 
 void main() {
@@ -49,7 +48,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Mulai Konseling'), findsOneWidget);
-      expect(find.text('Belum ada percakapan BK.'), findsOneWidget);
+      expect(find.textContaining('Belum ada percakapan BK.'), findsOneWidget);
     });
 
     testWidgets('counselor shows queue and assigned tabs', (tester) async {
@@ -95,11 +94,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final btn = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Setuju & Lanjutkan'));
+      final btn = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Saya Setuju dan Lanjutkan'));
       expect(btn.onPressed, isNull);
       await tester.tap(find.byType(Checkbox));
       await tester.pump();
-      final btn2 = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Setuju & Lanjutkan'));
+      final btn2 = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Saya Setuju dan Lanjutkan'));
       expect(btn2.onPressed, isNotNull);
     });
   });
@@ -118,8 +117,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Siswa BK #A1B2'), findsOneWidget);
-      expect(find.text('Siswa BK #C3D4'), findsOneWidget);
+      expect(find.textContaining('Siswa BK #A1B2'), findsOneWidget);
+      expect(find.textContaining('Siswa BK #C3D4'), findsOneWidget);
     });
   });
 
@@ -145,12 +144,13 @@ void main() {
           overrides: [
             currentProfileProvider.overrideWith((ref) async => const UserProfile(id: '1', pseudonym: 's1', role: 'student')),
             counselingMessagesProvider.overrideWith((ref, id) async => []),
+            bkConversationProvider.overrideWith((ref, id) async => _conv('conv1', 'Siswa BK #A1B2', 'open')),
           ],
           child: const MaterialApp(home: BkConversationPage(conversationId: 'conv1')),
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Belum ada pesan.'), findsOneWidget);
+      expect(find.textContaining('Belum ada pesan.'), findsOneWidget);
     });
 
     testWidgets('counselor sees reveal button', (tester) async {

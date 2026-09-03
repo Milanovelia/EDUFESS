@@ -28,6 +28,34 @@ final counselingMessagesProvider = FutureProvider.family<List<BkMessage>, String
   return ref.watch(counselingRepositoryProvider).fetchMessages(conversationId);
 });
 
+final bkConversationProvider = FutureProvider.family<BkConversation?, String>((ref, id) async {
+  final repo = ref.watch(counselingRepositoryProvider);
+  // Try student list first, then counselor, then direct fetch
+  try {
+    final list = await repo.fetchStudentConversations();
+    for (final c in list) {
+      if (c.id == id) return c;
+    }
+  } catch (_) {}
+  try {
+    final queue = await repo.fetchCounselorQueue();
+    for (final c in queue) {
+      if (c.id == id) return c;
+    }
+  } catch (_) {}
+  try {
+    final assigned = await repo.fetchCounselorAssigned();
+    for (final c in assigned) {
+      if (c.id == id) return c;
+    }
+  } catch (_) {}
+  // Fallback direct (participant can select own via RLS)
+  final client = ref.watch(supabaseClientProvider);
+  final data = await client.from('counseling_conversations').select().eq('id', id).maybeSingle();
+  if (data == null) return null;
+  return BkConversation.fromMap(data);
+});
+
 // For role-based UI
 final currentProfileForBkProvider = FutureProvider((ref) async {
   return ref.watch(counselingRepositoryProvider).hasActiveConsent(); // placeholder, actual profile from auth_controller
