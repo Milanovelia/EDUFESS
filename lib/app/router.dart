@@ -7,18 +7,19 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/providers/auth_providers.dart';
-import '../features/counseling/presentation/pages/bk_appointments_page.dart';
-import '../features/counseling/presentation/pages/bk_mood_page.dart';
-import '../features/counseling/presentation/pages/bk_page.dart';
-import '../features/counseling/presentation/pages/bk_conversation_page.dart';
-import '../features/counseling/presentation/pages/bk_peer_concern_history_page.dart';
-import '../features/counseling/presentation/pages/bk_peer_concern_page.dart';
-import '../features/counseling/presentation/pages/counselor_appointments_page.dart';
-import '../features/counseling/presentation/pages/counselor_availability_page.dart';
-import '../features/counseling/presentation/pages/counselor_mood_history_page.dart';
-import '../features/counseling/presentation/pages/counselor_peer_concern_detail_page.dart';
-import '../features/counseling/presentation/pages/counselor_peer_concern_queue_page.dart';
-import '../features/create_post/presentation/pages/create_post_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/bk_appointments_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/bk_mood_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/bk_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/bk_conversation_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/bk_peer_concern_history_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/bk_peer_concern_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/counselor_appointments_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/counselor_availability_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/counselor_mood_history_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/counselor_peer_concern_detail_page.dart';
+import 'package:edufess/features/counseling/presentation/pages/counselor_peer_concern_queue_page.dart';
+import 'package:edufess/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:edufess/features/create_post/presentation/pages/create_post_page.dart';
 import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
 import '../features/feed/presentation/pages/post_detail_page.dart';
@@ -90,6 +91,9 @@ abstract final class AppRoutes {
 
   static const String counselorPeerConcernDetail = '/bk/peduli-teman/counselor/:id';
   static const String counselorPeerConcernDetailName = 'counselorPeerConcernDetail';
+
+  static const String notifications = '/notifications';
+  static const String notificationsName = 'notifications';
 }
 
 /// Whether the given [location] is an auth route (login or register).
@@ -213,6 +217,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id']!;
           return CounselorPeerConcernDetailPage(concernId: id);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        name: AppRoutes.notificationsName,
+        builder: (context, state) => const NotificationsPage(),
       ),
 
       // App shell with bottom navigation
