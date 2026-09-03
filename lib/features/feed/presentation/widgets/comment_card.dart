@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../data/models/comment.dart';
+import '../../../moderation/presentation/widgets/report_dialog.dart';
 
 /// Single comment/best-answer card.
-class CommentCard extends StatelessWidget {
+class CommentCard extends ConsumerWidget {
   const CommentCard({
     required this.comment,
     this.onReply,
@@ -21,7 +23,7 @@ class CommentCard extends StatelessWidget {
   final VoidCallback? onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Container(
       margin: EdgeInsets.only(
@@ -84,6 +86,14 @@ class CommentCard extends StatelessWidget {
                   label: const Text('Hapus'),
                   style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                 ),
+              const Spacer(),
+              PopupMenuButton<String>(
+                onSelected: (v) {
+                  if (v == 'report') showReportDialog(context, ref, targetType: 'comment', commentId: comment.id);
+                },
+                itemBuilder: (c) => const [PopupMenuItem(value: 'report', child: Text('Laporkan'))],
+                icon: const Icon(Icons.more_vert, size: 16),
+              ),
             ],
           ),
         ],

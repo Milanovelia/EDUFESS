@@ -6,6 +6,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../feed/data/models/post.dart';
 import '../../../../app/router.dart';
 import '../providers/feed_providers.dart';
+import '../../../moderation/presentation/widgets/report_dialog.dart';
 
 /// Reusable small card for feed/explore.
 class PostCard extends ConsumerWidget {
@@ -58,8 +59,18 @@ class PostCard extends ConsumerWidget {
                   ],
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(post.displayAuthor, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary)),
+              Row(
+                children: [
+                  Expanded(child: Text(post.displayAuthor, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary))),
+                  PopupMenuButton<String>(
+                    onSelected: (v) {
+                      if (v == 'report') showReportDialog(context, ref, targetType: 'post', postId: post.id);
+                    },
+                    itemBuilder: (c) => const [PopupMenuItem(value: 'report', child: Text('Laporkan'))],
+                    icon: const Icon(Icons.more_vert, size: 18),
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(post.title, style: theme.textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
               const SizedBox(height: AppSpacing.xs),

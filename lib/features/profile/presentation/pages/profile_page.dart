@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
+import '../../../moderation/presentation/providers/moderation_providers.dart';
 
 /// Profile tab showing current user info and logout.
 ///
@@ -97,6 +98,21 @@ class ProfilePage extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push(AppRoutes.saved),
               ),
+              Consumer(builder: (context, ref, _) {
+                final isAdminAsync = ref.watch(isAdminProvider);
+                return isAdminAsync.maybeWhen(
+                  data: (isAdmin) => isAdmin
+                      ? ListTile(
+                          leading: const Icon(Icons.shield_outlined),
+                          title: const Text('Moderasi'),
+                          subtitle: const Text('Antrean laporan konten'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push(AppRoutes.moderation),
+                        )
+                      : const SizedBox.shrink(),
+                  orElse: () => const SizedBox.shrink(),
+                );
+              }),
               ListTile(
                 leading: const Icon(Icons.info_outline),
                 title: const Text('Tentang EduFess'),

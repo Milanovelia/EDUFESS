@@ -12,6 +12,7 @@ import '../features/create_post/presentation/pages/create_post_page.dart';
 import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
 import '../features/feed/presentation/pages/post_detail_page.dart';
+import '../features/moderation/presentation/pages/moderation_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/saved/presentation/pages/saved_page.dart';
 import 'app_shell.dart';
@@ -46,6 +47,9 @@ abstract final class AppRoutes {
 
   static const String saved = '/saved';
   static const String savedName = 'saved';
+
+  static const String moderation = '/admin/moderation';
+  static const String moderationName = 'moderation';
 }
 
 /// Whether the given [location] is an auth route (login or register).
@@ -105,6 +109,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.saved,
         name: AppRoutes.savedName,
         builder: (context, state) => const SavedPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.moderation,
+        name: AppRoutes.moderationName,
+        builder: (context, state) => const ModerationPage(),
       ),
 
       // App shell with bottom navigation

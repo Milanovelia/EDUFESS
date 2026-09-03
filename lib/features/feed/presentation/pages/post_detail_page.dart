@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../providers/feed_providers.dart';
 import '../../data/models/post.dart';
+import '../../../moderation/presentation/widgets/report_dialog.dart';
 
 /// `/post/:id` — displays full post content.
 class PostDetailPage extends ConsumerWidget {
@@ -61,7 +62,18 @@ class PostDetailPage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text(post.displayAuthor, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary)),
+                Row(
+                  children: [
+                    Expanded(child: Text(post.displayAuthor, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary))),
+                    PopupMenuButton<String>(
+                      onSelected: (v) {
+                        if (v == 'report') showReportDialog(context, ref, targetType: 'post', postId: post.id);
+                      },
+                      itemBuilder: (c) => const [PopupMenuItem(value: 'report', child: Text('Laporkan'))],
+                      icon: const Icon(Icons.more_vert),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(post.title, style: theme.textTheme.headlineSmall),
                 const SizedBox(height: AppSpacing.sm),
