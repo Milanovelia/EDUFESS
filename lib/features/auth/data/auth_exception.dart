@@ -60,6 +60,20 @@ final class InvalidPseudonymFormatException extends AuthException {
       : super('Pseudonim harus 3-32 karakter (huruf, angka, _ . -).');
 }
 
+/// Signup succeeded but the account awaits email confirmation, so no session
+/// exists yet. The user must verify their email before signing in.
+final class EmailConfirmationRequiredException extends AuthException {
+  const EmailConfirmationRequiredException()
+      : super('Pendaftaran berhasil. Periksa email Anda untuk konfirmasi '
+          'akun, lalu masuk kembali.');
+}
+
+/// The auth service temporarily refuses to send another confirmation email.
+final class EmailRateLimitException extends AuthException {
+  const EmailRateLimitException()
+      : super('Terlalu banyak permintaan. Tunggu beberapa saat lalu coba lagi.');
+}
+
 /// Generic auth failure that doesn't fit other categories.
 final class AuthGenericException extends AuthException {
   const AuthGenericException(super.message);
@@ -96,6 +110,17 @@ AuthException translateAuthError(Object error) {
   if (message.contains('invalid invitation code')) {
     return const InvalidInvitationException();
   }
+  if (message.contains('email rate limit') ||
+      message.contains('over_email_send_rate_limit')) {
+    return const EmailRateLimitException();
+  }
+  if (message.contains('email not confirmed') ||
+      message.contains('confirmation') ||
+      message.contains('verify your email')) {
+    return const EmailConfirmationRequiredException();
+  }
 
-  return AuthGenericException(error.toString());
+  return const AuthGenericException(
+    'Terjadi kesalahan. Silakan coba lagi nanti.',
+  );
 }

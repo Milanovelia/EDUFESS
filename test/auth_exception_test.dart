@@ -60,12 +60,26 @@ void main() {
       expect(error, isA<InvalidPseudonymFormatException>());
     });
 
-    test('returns generic for unknown errors', () {
+    test('returns generic Indonesian message for unknown errors', () {
       final error = translateAuthError(
         Exception('Something unexpected happened'),
       );
       expect(error, isA<AuthGenericException>());
-      expect(error.message, contains('Something unexpected'));
+      expect(error.message, 'Terjadi kesalahan. Silakan coba lagi nanti.');
+    });
+
+    test('translates email confirmation required', () {
+      final error = translateAuthError(
+        Exception('Email not confirmed'),
+      );
+      expect(error, isA<EmailConfirmationRequiredException>());
+    });
+
+    test('translates email rate limit', () {
+      final error = translateAuthError(
+        Exception('over_email_send_rate_limit'),
+      );
+      expect(error, isA<EmailRateLimitException>());
     });
   });
 }

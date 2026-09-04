@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../data/auth_exception.dart';
 import '../providers/auth_controller.dart';
 
 /// Registration screen with email, pseudonym, password, and invitation code.
@@ -40,7 +41,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }
 
   Future<void> _handleRegister() async {
-    if (!_formKey.currentState!.validate()) return;
+    final form = _formKey.currentState;
+    if (form == null) return;
+    if (!form.validate()) return;
+
+    // Reset any previous async error state so the next submit can proceed
+    ref.read(authControllerProvider.notifier).state = const AsyncData(null);
 
     final controller = ref.read(authControllerProvider.notifier);
     final error = await controller.signUp(
@@ -51,9 +57,45 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     );
 
     if (!mounted) return;
+
+    // Account created, awaiting email confirmation (no session yet). A dialog
+    // is more visible than a snackbar and keeps the user on this page, which
+    // is correct because there is nothing to navigate to yet.
+    if (error is EmailConfirmationRequiredException) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Pendaftaran Berhasil'),
+          content: const Text(
+            'Akun Anda telah dibuat. Periksa email Anda untuk mengonfirmasi '
+            'akun, lalu masuk kembali.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => dialogContext.pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
+        SnackBar(
+          content: Text(error.message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    // Success with a session — the router redirects to home. Show a brief
+    // confirmation; if the redirect happens first this is a no-op.
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pendaftaran berhasil. Selamat datang!')),
       );
     }
   }

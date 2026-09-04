@@ -7,6 +7,10 @@ import 'package:edufess/features/auth/presentation/pages/register_page.dart';
 import 'package:edufess/features/auth/presentation/providers/auth_controller.dart';
 
 void main() {
+  setUp(() {
+    _MockAuthController.nextSignUpResult = null;
+  });
+
   group('RegisterPage', () {
     Widget buildRegisterScreen() {
       return ProviderScope(
@@ -246,11 +250,105 @@ void main() {
       expect(find.text('Kode undangan wajib diisi.'), findsNothing);
     });
   });
+
+  group('RegisterPage feedback', () {
+    testWidgets('shows confirmation dialog when account awaits email confirmation',
+        (tester) async {
+      _MockAuthController.nextSignUpResult =
+          const EmailConfirmationRequiredException();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(() => _MockAuthController()),
+          ],
+          child: const MaterialApp(home: RegisterPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _fillValidForm(tester);
+      await tester.tap(find.text('Daftar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Pendaftaran Berhasil'), findsOneWidget);
+      expect(find.textContaining('Periksa email'), findsOneWidget);
+    });
+
+    testWidgets('shows Indonesian error snackbar for invalid invitation',
+        (tester) async {
+      _MockAuthController.nextSignUpResult =
+          const InvalidInvitationException();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(() => _MockAuthController()),
+          ],
+          child: const MaterialApp(home: RegisterPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _fillValidForm(tester);
+      await tester.tap(find.text('Daftar'));
+      await tester.pump();
+
+      expect(
+        find.text('Kode undangan tidak valid atau sudah digunakan.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows Indonesian snackbar for generic error', (tester) async {
+      _MockAuthController.nextSignUpResult =
+          const AuthGenericException('Terjadi kesalahan. Silakan coba lagi nanti.');
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(() => _MockAuthController()),
+          ],
+          child: const MaterialApp(home: RegisterPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _fillValidForm(tester);
+      await tester.tap(find.text('Daftar'));
+      await tester.pump();
+
+      expect(find.text('Terjadi kesalahan. Silakan coba lagi nanti.'),
+          findsOneWidget);
+    });
+  });
 }
 
-/// Mock auth controller that does nothing (no Supabase connection).
+Future<void> _fillValidForm(WidgetTester tester) async {
+  await tester.enterText(
+    find.widgetWithText(TextFormField, 'Email'),
+    'test@example.com',
+  );
+  await tester.enterText(
+    find.widgetWithText(TextFormField, 'Pseudonim'),
+    'TestUser',
+  );
+  await tester.enterText(
+    find.widgetWithText(TextFormField, 'Kata Sandi'),
+    'password123',
+  );
+  await tester.enterText(
+    find.widgetWithText(TextFormField, 'Konfirmasi Kata Sandi'),
+    'password123',
+  );
+  await tester.enterText(
+    find.widgetWithText(TextFormField, 'Kode Undangan'),
+    'INVITE-123',
+  );
+}
+
+/// Mock auth controller with configurable sign-up result (no Supabase).
 class _MockAuthController extends Notifier<AsyncValue<void>>
     implements AuthController {
+  static AuthException? nextSignUpResult;
+
   @override
   AsyncValue<void> build() => const AsyncData(null);
 
@@ -269,7 +367,7 @@ class _MockAuthController extends Notifier<AsyncValue<void>>
     required String pseudonym,
     required String inviteCode,
   }) async {
-    return null;
+    return nextSignUpResult;
   }
 
   @override

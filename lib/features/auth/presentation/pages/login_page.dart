@@ -30,7 +30,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) return;
 
     final controller = ref.read(authControllerProvider.notifier);
     final error = await controller.signIn(
@@ -40,9 +41,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (!mounted) return;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    } else {
+      context.go(AppRoutes.home);
     }
   }
 

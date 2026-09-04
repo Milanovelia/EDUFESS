@@ -54,7 +54,11 @@ class AuthController extends Notifier<AsyncValue<void>> {
 
   /// Registers a new user with email, password, pseudonym, and invitation code.
   ///
-  /// Returns `null` on success, or an [AuthException] on failure.
+  /// Returns `null` on success, in which case a session exists and the router
+  /// redirects to the home page. Returns an [AuthException] otherwise:
+  /// - [EmailConfirmationRequiredException] when the account was created but
+  ///   awaits email confirmation (no session yet);
+  /// - a translated failure for every other error.
   Future<AuthException?> signUp({
     required String email,
     required String password,
@@ -63,13 +67,23 @@ class AuthController extends Notifier<AsyncValue<void>> {
   }) async {
     state = const AsyncLoading();
     try {
-      await _repo.signUp(
+      final response = await _repo.signUp(
         email: email,
         password: password,
         pseudonym: pseudonym,
         inviteCode: inviteCode,
       );
+
+      // No session → account awaits email confirmation. Surface a clear
+      // message so the UI never appears to "do nothing".
+      if (response.session == null) {
+        state = const AsyncData(null);
+        return const EmailConfirmationRequiredException();
+      }
+
+      // Session created → let the auth stream drive the redirect to home.
       state = const AsyncData(null);
+      ref.invalidate(currentSessionProvider);
       return null;
     } on Object catch (e) {
       state = const AsyncData(null);
