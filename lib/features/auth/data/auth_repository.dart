@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Wraps Supabase Auth operations for Edufess.
@@ -33,22 +35,30 @@ class AuthRepository {
     return _auth.signUp(
       email: email,
       password: password,
-      data: {
-        'pseudonym': pseudonym,
-        'invite_code': inviteCode,
-      },
+      data: {'pseudonym': pseudonym, 'invite_code': inviteCode},
     );
   }
 
   /// Signs in with email + password.
+  ///
+  /// [20] second timeout protection to prevent indefinite loading.
+  /// The timeout is applied directly to the Supabase Future to ensure
+  /// a real wall-clock timeout, not just a post-completion check.
   Future<AuthResponse> signIn({
     required String email,
     required String password,
   }) async {
-    return _auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+    // REAL timeout: applied directly to the Supabase Future.
+    // If the request takes >20s, onTimeout fires and throws TimeoutException,
+    // which the caller (AuthController) translates into a safe message.
+    return _auth
+        .signInWithPassword(email: email, password: password)
+        .timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            throw TimeoutException('Login request timed out');
+          },
+        );
   }
 
   /// Signs out the current user.

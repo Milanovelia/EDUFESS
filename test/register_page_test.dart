@@ -371,5 +371,8 @@ class _MockAuthController extends Notifier<AsyncValue<void>>
   }
 
   @override
+  void reset() {}
+
+  @override
   Future<void> signOut() async {}
 }

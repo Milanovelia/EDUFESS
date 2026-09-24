@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/providers/auth_providers.dart';
+import '../core/config/supabase_providers.dart';
+
 import 'package:edufess/features/counseling/presentation/pages/bk_appointments_page.dart';
 import 'package:edufess/features/counseling/presentation/pages/bk_mood_page.dart';
 import 'package:edufess/features/counseling/presentation/pages/bk_page.dart';
@@ -20,6 +22,7 @@ import 'package:edufess/features/counseling/presentation/pages/counselor_peer_co
 import 'package:edufess/features/counseling/presentation/pages/counselor_peer_concern_queue_page.dart';
 import 'package:edufess/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:edufess/features/create_post/presentation/pages/create_post_page.dart';
+
 import '../features/explore/presentation/pages/explore_page.dart';
 import '../features/feed/presentation/pages/home_page.dart';
 import '../features/feed/presentation/pages/post_detail_page.dart';
@@ -87,10 +90,13 @@ abstract final class AppRoutes {
   static const String bkPeerConcernHistoryName = 'bkPeerConcernHistory';
 
   static const String counselorPeerConcernQueue = '/bk/peduli-teman/counselor';
-  static const String counselorPeerConcernQueueName = 'counselorPeerConcernQueue';
+  static const String counselorPeerConcernQueueName =
+      'counselorPeerConcernQueue';
 
-  static const String counselorPeerConcernDetail = '/bk/peduli-teman/counselor/:id';
-  static const String counselorPeerConcernDetailName = 'counselorPeerConcernDetail';
+  static const String counselorPeerConcernDetail =
+      '/bk/peduli-teman/counselor/:id';
+  static const String counselorPeerConcernDetailName =
+      'counselorPeerConcernDetail';
 
   static const String notifications = '/notifications';
   static const String notificationsName = 'notifications';
@@ -99,6 +105,29 @@ abstract final class AppRoutes {
 /// Whether the given [location] is an auth route (login or register).
 bool _isAuthRoute(String location) =>
     location == AppRoutes.login || location == AppRoutes.register;
+
+/// Pure redirect decision using the **direct** Supabase session.
+///
+/// [isLoggedIn] must come from `supabase.auth.currentSession != null`
+/// (synchronous, authoritative). It must NOT come from
+/// `currentSessionProvider`, which can lag one frame behind
+/// `authStateChanges` right after sign-in/sign-out.
+///
+/// - Authenticated user on auth route → [AppRoutes.home]
+/// - Unauthenticated user on app route → [AppRoutes.login]
+/// - Otherwise → `null` (no redirect, allow)
+///
+/// Extracted as a top-level pure function so it is unit-testable without
+/// mocking Supabase.
+String? resolveAuthRedirect(String location, {required bool isLoggedIn}) {
+  if (isLoggedIn && _isAuthRoute(location)) {
+    return AppRoutes.home;
+  }
+  if (!isLoggedIn && !_isAuthRoute(location)) {
+    return AppRoutes.login;
+  }
+  return null;
+}
 
 /// App router with auth guard.
 ///
@@ -111,21 +140,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       ref.watch(authRepositoryProvider).authStateChanges.map((_) => null),
     ),
     redirect: (context, state) {
-      final session = ref.read(currentSessionProvider);
-      final isLoggedIn = session.hasValue && session.value != null;
       final location = state.matchedLocation;
 
-      // Authenticated user on auth page → redirect to home
-      if (isLoggedIn && _isAuthRoute(location)) {
-        return AppRoutes.home;
+      // AUTHORITATIVE: direct synchronous Supabase session.
+      // Valid immediately after signInWithPassword() returns, with no
+      // provider/stream lag. Router decisions must use this — never the
+      // lagging currentSessionProvider snapshot.
+      bool isLoggedIn;
+      try {
+        final auth = ref.read(supabaseClientProvider).auth;
+        isLoggedIn = auth.currentSession != null;
+      } catch (_) {
+        // Supabase not initialized (e.g. widget tests without overrides).
+        // Fail closed: treat as logged out so protected routes go to login.
+        isLoggedIn = false;
       }
 
-      // Unauthenticated user on app page → redirect to login
-      if (!isLoggedIn && !_isAuthRoute(location)) {
-        return AppRoutes.login;
-      }
-
-      return null; // No redirect
+      return resolveAuthRedirect(location, isLoggedIn: isLoggedIn);
     },
     routes: [
       // Auth routes

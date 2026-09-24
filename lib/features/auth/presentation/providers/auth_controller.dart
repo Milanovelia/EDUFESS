@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/auth_repository.dart';
@@ -12,7 +14,9 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 });
 
 /// Current user's profile. `null` when not authenticated or profile not loaded.
-final currentProfileProvider = FutureProvider.autoDispose<UserProfile?>((ref) async {
+final currentProfileProvider = FutureProvider.autoDispose<UserProfile?>((
+  ref,
+) async {
   final session = ref.watch(currentSessionProvider);
   if (session case AsyncData(:final value)) {
     if (value == null) return null;
@@ -34,18 +38,41 @@ class AuthController extends Notifier<AsyncValue<void>> {
 
   AuthRepository get _repo => ref.read(authRepositoryProvider);
 
+  /// Resets the controller to idle, clearing any previous error state
+  /// so a new submit can proceed. UI must call this instead of
+  /// mutating [Notifier.state] directly.
+  void reset() {
+    state = const AsyncData(null);
+  }
+
   /// Signs in with email + password.
   ///
   /// Returns `null` on success, or an [AuthException] on failure.
+  /// [20] second timeout protection applied via .timeout() on the Supabase Future.
   Future<AuthException?> signIn({
     required String email,
     required String password,
   }) async {
     state = const AsyncLoading();
+
     try {
-      await _repo.signIn(email: email, password: password);
+      final response = await _repo.signIn(email: email, password: password);
+
+      if (response.session != null) {
+        // Session created — clear loading, allow auth stream to drive redirect
+        state = const AsyncData(null);
+        return null;
+      } else {
+        // No session yet — e.g. email confirmation required
+        state = const AsyncData(null);
+        return const EmailConfirmationRequiredException();
+      }
+    } on TimeoutException {
+      // Timeout from .timeout() above — return safe Indonesian error
       state = const AsyncData(null);
-      return null;
+      return const AuthGenericException(
+        'Koneksi ke server terlalu lama. Coba lagi.',
+      );
     } on Object catch (e) {
       state = const AsyncData(null);
       return translateAuthError(e);

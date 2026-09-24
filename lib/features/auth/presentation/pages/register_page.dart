@@ -46,7 +46,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (!form.validate()) return;
 
     // Reset any previous async error state so the next submit can proceed
-    ref.read(authControllerProvider.notifier).state = const AsyncData(null);
+    ref.read(authControllerProvider.notifier).reset();
 
     final controller = ref.read(authControllerProvider.notifier);
     final error = await controller.signUp(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:edufess/features/auth/data/auth_exception.dart';
 import 'package:edufess/features/auth/presentation/pages/login_page.dart';
@@ -9,11 +10,29 @@ import 'package:edufess/features/auth/presentation/providers/auth_controller.dar
 void main() {
   group('LoginPage', () {
     Widget buildLoginScreen() {
+      // LoginPage calls context.go('/') on successful sign-in, so the
+      // test harness must provide a GoRouter (otherwise "No GoRouter
+      // found in context" throws on the valid-input path).
+      final router = GoRouter(
+        initialLocation: '/login',
+        routes: [
+          GoRoute(
+            path: '/login',
+            builder: (context, state) => const LoginPage(),
+          ),
+          GoRoute(
+            path: '/',
+            builder: (context, state) =>
+                const Scaffold(body: Text('home-sink')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
       return ProviderScope(
         overrides: [
           authControllerProvider.overrideWith(() => _MockAuthController()),
         ],
-        child: const MaterialApp(home: LoginPage()),
+        child: MaterialApp.router(routerConfig: router),
       );
     }
 
@@ -122,6 +141,9 @@ class _MockAuthController extends Notifier<AsyncValue<void>>
   }) async {
     return null;
   }
+
+  @override
+  void reset() {}
 
   @override
   Future<void> signOut() async {}

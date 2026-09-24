@@ -34,17 +34,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (form == null || !form.validate()) return;
 
     final controller = ref.read(authControllerProvider.notifier);
+
     final error = await controller.signIn(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
     if (!mounted) return;
+
     if (error != null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(error.message)));
     } else {
-      context.go(AppRoutes.home);
+      context.go('/');
     }
   }
 

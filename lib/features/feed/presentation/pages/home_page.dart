@@ -44,7 +44,11 @@ class HomePage extends ConsumerWidget {
                   SizedBox(height: 120),
                   Icon(Icons.inbox_outlined, size: 48),
                   SizedBox(height: AppSpacing.md),
-                  Center(child: Text('Belum ada post. Jadilah yang pertama berbagi!')),
+                  Center(
+                    child: Text(
+                      'Belum ada post. Jadilah yang pertama berbagi!',
+                    ),
+                  ),
                 ],
               ),
             );
