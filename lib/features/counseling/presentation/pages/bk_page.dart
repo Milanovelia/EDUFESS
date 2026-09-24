@@ -421,6 +421,15 @@ class _CounselorBkView extends ConsumerWidget {
                             trailing: Consumer(builder: (context, ref, _) {
                               final loading = ref.watch(counselingControllerProvider).isLoading;
                               return FilledButton(
+                                // BK-03: the app theme sets button
+                                // minimumSize width to infinite
+                                // (full-width buttons). ListTile trailing
+                                // receives unbounded horizontal width, so an
+                                // infinite minimum throws "BoxConstraints
+                                // forces an infinite width". Constrain the
+                                // claim action to its natural width here;
+                                // height (48) still follows the theme.
+                                style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
                                 onPressed: loading
                                     ? null
                                     : () async {
