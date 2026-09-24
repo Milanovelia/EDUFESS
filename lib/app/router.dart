@@ -191,14 +191,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ModerationPage(),
       ),
       GoRoute(
-        path: AppRoutes.bkConversation,
-        name: AppRoutes.bkConversationName,
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return BkConversationPage(conversationId: id);
-        },
-      ),
-      GoRoute(
         path: AppRoutes.bkAppointments,
         name: AppRoutes.bkAppointmentsName,
         builder: (context, state) => const BkAppointmentsPage(),
@@ -247,6 +239,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return CounselorPeerConcernDetailPage(concernId: id);
+        },
+      ),
+      // Dynamic conversation route LAST among BK routes: go_router matches
+      // top-level routes in declaration order, so `/bk/:id` declared earlier
+      // would capture `/bk/mood`, `/bk/appointments`, `/bk/availability`
+      // and `/bk/peduli-teman` as bogus conversation ids (BK-01).
+      GoRoute(
+        path: AppRoutes.bkConversation,
+        name: AppRoutes.bkConversationName,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return BkConversationPage(conversationId: id);
         },
       ),
       GoRoute(

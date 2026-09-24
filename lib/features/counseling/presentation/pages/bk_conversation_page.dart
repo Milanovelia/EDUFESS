@@ -270,6 +270,13 @@ class _BkConversationPageState extends ConsumerState<BkConversationPage> {
                   Consumer(builder: (context, ref, _) {
                     final loading = ref.watch(counselingControllerProvider).isLoading;
                     return FilledButton(
+                      // BK-02: the app theme sets button minimumSize width to
+                      // infinite (full-width buttons). Inside this Row the
+                      // incoming width is unbounded, so an infinite minimum
+                      // throws "BoxConstraints forces an infinite width".
+                      // Constrain the send action to its natural width here;
+                      // height (48) still follows the theme.
+                      style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
                       onPressed: loading
                           ? null
                           : () async {
