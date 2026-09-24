@@ -258,6 +258,41 @@ class CounselingController extends Notifier<AsyncValue<void>> {
     }
   }
 
+  Future<String?> updateAvailability({
+    required String availabilityId,
+    required DateTime date,
+    required String startTime,
+    required String endTime,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).updateAvailability(availabilityId: availabilityId, date: date, startTime: startTime, endTime: endTime);
+      ref.invalidate(myAvailabilityProvider);
+      ref.invalidate(availableSlotsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal mengubah slot.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
+  Future<String?> deactivateAvailability(String availabilityId) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(counselingRepositoryProvider).deactivateAvailability(availabilityId: availabilityId);
+      ref.invalidate(myAvailabilityProvider);
+      ref.invalidate(availableSlotsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is CounselingException ? e.message : 'Gagal menonaktifkan slot.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
   Future<String?> requestAppointment({
     required String availabilityId,
     String? studentNote,

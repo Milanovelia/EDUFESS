@@ -190,6 +190,35 @@ class CounselingRepository {
     }
   }
 
+  /// Updates a counselor-owned, unbooked, active, future availability slot.
+  ///
+  /// Server enforces ownership, active state, future date, start < end,
+  /// duplicate guard, and booked-slot protection.
+  Future<void> updateAvailability({required String availabilityId, required DateTime date, required String startTime, required String endTime}) async {
+    try {
+      await _client.rpc('update_counselor_availability', params: {
+        'p_availability_id': availabilityId,
+        'p_available_date': date.toIso8601String().split('T')[0],
+        'p_start_time': startTime,
+        'p_end_time': endTime,
+      });
+    } catch (e) {
+      throw CounselingException(_translateAvailabilityManageError(e, 'diubah'));
+    }
+  }
+
+  /// Soft-deactivates (`is_active = false`) a counselor-owned, unbooked slot
+  /// so it disappears from student discovery. Never physically deletes.
+  Future<void> deactivateAvailability({required String availabilityId}) async {
+    try {
+      await _client.rpc('deactivate_counselor_availability', params: {
+        'p_availability_id': availabilityId,
+      });
+    } catch (e) {
+      throw CounselingException(_translateAvailabilityManageError(e, 'dinonaktifkan'));
+    }
+  }
+
   Future<List<CounselorAvailability>> fetchMyAvailability() async {
     final user = _client.auth.currentUser;
     if (user == null) return [];
@@ -407,6 +436,20 @@ class CounselingRepository {
 
   String _translateAvailabilityError(Object e) {
     final m = e.toString().toLowerCase();
+    if (m.contains('past slot')) return 'Slot sudah lewat.';
+    if (m.contains('invalid time')) return 'Waktu tidak valid.';
+    if (m.contains('slot sudah ada')) return 'Slot sudah ada.';
+    if (m.contains('not authorized')) return 'Tidak memiliki akses.';
+    if (m.contains('not authenticated')) return 'Harus login.';
+    return 'Gagal mengelola ketersediaan.';
+  }
+
+  /// Maps edit/deactivate failures. [action] is 'diubah' or 'dinonaktifkan'.
+  String _translateAvailabilityManageError(Object e, String action) {
+    final m = e.toString().toLowerCase();
+    if (m.contains('sudah dipesan')) return 'Slot ini sudah dipesan sehingga tidak bisa $action.';
+    if (m.contains('tidak ditemukan') || m.contains('not found')) return 'Slot tidak ditemukan.';
+    if (m.contains('tidak aktif')) return 'Slot sudah tidak aktif.';
     if (m.contains('past slot')) return 'Slot sudah lewat.';
     if (m.contains('invalid time')) return 'Waktu tidak valid.';
     if (m.contains('slot sudah ada')) return 'Slot sudah ada.';
