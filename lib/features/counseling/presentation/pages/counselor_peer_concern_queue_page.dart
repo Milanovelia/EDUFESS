@@ -48,6 +48,14 @@ class CounselorPeerConcernQueuePage extends ConsumerWidget {
                             ],
                           ),
                           trailing: FilledButton(
+                            // BK-PC-01: the app theme sets button
+                            // minimumSize width to infinite
+                            // (full-width buttons). ListTile trailing
+                            // receives unbounded horizontal width, so an
+                            // infinite minimum breaks _RenderListTile layout.
+                            // Constrain the claim action to its natural width
+                            // here; height (48) still follows the theme.
+                            style: FilledButton.styleFrom(minimumSize: const Size(64, 48)),
                             onPressed: () async {
                               final err = await ref.read(peerConcernControllerProvider.notifier).claim(concern.id);
                               if (err != null && context.mounted) {
