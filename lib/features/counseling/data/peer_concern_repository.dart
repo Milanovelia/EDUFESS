@@ -78,17 +78,17 @@ class PeerConcernRepository {
     }
   }
 
-  Future<void> resolve(String concernId, {String? note}) async {
+  Future<void> resolve(String concernId, {String? note, String? response}) async {
     try {
-      await _client.rpc('resolve_bk_peer_concern', params: {'p_concern_id': concernId, 'p_resolution_note': note});
+      await _client.rpc('resolve_bk_peer_concern', params: {'p_concern_id': concernId, 'p_resolution_note': note, 'p_reporter_response': response});
     } catch (e) {
       throw PeerConcernException(_translateResolveError(e));
     }
   }
 
-  Future<void> dismiss(String concernId, {String? note}) async {
+  Future<void> dismiss(String concernId, {String? note, String? response}) async {
     try {
-      await _client.rpc('dismiss_bk_peer_concern', params: {'p_concern_id': concernId, 'p_resolution_note': note});
+      await _client.rpc('dismiss_bk_peer_concern', params: {'p_concern_id': concernId, 'p_resolution_note': note, 'p_reporter_response': response});
     } catch (e) {
       throw PeerConcernException(_translateResolveError(e));
     }
@@ -139,6 +139,7 @@ class PeerConcernRepository {
     final m = e.toString().toLowerCase();
     if (m.contains('not assigned')) return 'Kamu bukan penangan laporan ini.';
     if (m.contains('only pending')) return 'Hanya laporan yang sedang ditinjau bisa diselesaikan.';
+    if (m.contains('note too long') || m.contains('response too long')) return 'Catatan terlalu panjang.';
     if (m.contains('not authorized')) return 'Tidak memiliki akses.';
     return 'Gagal memproses laporan.';
   }

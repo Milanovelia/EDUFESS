@@ -44,11 +44,21 @@ class CounselorPeerConcernDetailPage extends ConsumerWidget {
                     child: FilledButton(
                       onPressed: () async {
                         final noteCtrl = TextEditingController();
+                        final responseCtrl = TextEditingController();
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
                             title: const Text('Tandai Selesai'),
-                            content: TextField(controller: noteCtrl, decoration: const InputDecoration(labelText: 'Catatan penanganan (opsional)', border: OutlineInputBorder()), maxLines: 3),
+                            content: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(controller: responseCtrl, decoration: const InputDecoration(labelText: 'Tanggapan untuk pelapor', helperText: 'Pesan ini dapat dilihat oleh siswa yang mengirim laporan.', border: OutlineInputBorder()), maxLines: 3, maxLength: 2000),
+                                  const SizedBox(height: AppSpacing.md),
+                                  TextField(controller: noteCtrl, decoration: const InputDecoration(labelText: 'Catatan internal BK', helperText: 'Hanya dapat dilihat oleh guru BK.', border: OutlineInputBorder()), maxLines: 3, maxLength: 2000),
+                                ],
+                              ),
+                            ),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
                               FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Selesai')),
@@ -56,7 +66,7 @@ class CounselorPeerConcernDetailPage extends ConsumerWidget {
                           ),
                         );
                         if (confirm != true) return;
-                        final err = await ref.read(peerConcernControllerProvider.notifier).resolve(concern.id, note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim());
+                        final err = await ref.read(peerConcernControllerProvider.notifier).resolve(concern.id, note: _clean(noteCtrl.text), response: _clean(responseCtrl.text));
                         if (err != null && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
                         } else if (context.mounted) {
@@ -73,11 +83,21 @@ class CounselorPeerConcernDetailPage extends ConsumerWidget {
                     child: OutlinedButton(
                       onPressed: () async {
                         final noteCtrl = TextEditingController();
+                        final responseCtrl = TextEditingController();
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
                             title: const Text('Tutup Tanpa Tindak Lanjut'),
-                            content: TextField(controller: noteCtrl, decoration: const InputDecoration(labelText: 'Catatan (opsional)', border: OutlineInputBorder()), maxLines: 3),
+                            content: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(controller: responseCtrl, decoration: const InputDecoration(labelText: 'Tanggapan untuk pelapor', helperText: 'Pesan ini dapat dilihat oleh siswa yang mengirim laporan.', border: OutlineInputBorder()), maxLines: 3, maxLength: 2000),
+                                  const SizedBox(height: AppSpacing.md),
+                                  TextField(controller: noteCtrl, decoration: const InputDecoration(labelText: 'Catatan internal BK', helperText: 'Hanya dapat dilihat oleh guru BK.', border: OutlineInputBorder()), maxLines: 3, maxLength: 2000),
+                                ],
+                              ),
+                            ),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
                               FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Tutup')),
@@ -85,7 +105,7 @@ class CounselorPeerConcernDetailPage extends ConsumerWidget {
                           ),
                         );
                         if (confirm != true) return;
-                        final err = await ref.read(peerConcernControllerProvider.notifier).dismiss(concern.id, note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim());
+                        final err = await ref.read(peerConcernControllerProvider.notifier).dismiss(concern.id, note: _clean(noteCtrl.text), response: _clean(responseCtrl.text));
                         if (err != null && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
                         } else if (context.mounted) {
@@ -96,8 +116,24 @@ class CounselorPeerConcernDetailPage extends ConsumerWidget {
                       child: const Text('Tutup Tanpa Tindak Lanjut'),
                     ),
                   ),
-                ] else
-                  const Text('Laporan ini sudah ditangani.', style: TextStyle(fontStyle: FontStyle.italic)),
+                ] else ...[
+                  const Divider(height: AppSpacing.xl),
+                  Text('Penutupan', style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text('Status akhir: ${concern.statusLabel}', style: Theme.of(context).textTheme.labelMedium),
+                  if (concern.handledAt != null) Text('Ditangani: ${_date(concern.handledAt!)}', style: Theme.of(context).textTheme.labelSmall),
+                  if (concern.closedAt != null) Text('Ditutup: ${_date(concern.closedAt!)}', style: Theme.of(context).textTheme.labelSmall),
+                  if (concern.reporterResponse != null && concern.reporterResponse!.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text('TANGGAPAN UNTUK PELAPOR', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(concern.reporterResponse!),
+                  ],
+                  if (concern.resolutionNote != null && concern.resolutionNote!.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text('CATATAN INTERNAL', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(concern.resolutionNote!),
+                  ],
+                ],
               ],
             ),
           );
@@ -106,3 +142,9 @@ class CounselorPeerConcernDetailPage extends ConsumerWidget {
     );
   }
 }
+
+/// Trims optional note input; empty becomes null for the RPC.
+String? _clean(String v) => v.trim().isEmpty ? null : v.trim();
+
+/// Short day/month/year date for closure metadata.
+String _date(DateTime dt) => '${dt.day}/${dt.month}/${dt.year}';

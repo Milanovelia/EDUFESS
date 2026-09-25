@@ -24,8 +24,10 @@ void main() {
     });
 
     test('status labels', () {
-      expect(BkPeerConcern(id: '1', targetDisplay: 't', reason: 'emotional', status: 'pending', createdAt: DateTime.now()).statusLabel, 'Menunggu');
-      expect(BkPeerConcern(id: '1', targetDisplay: 't', reason: 'emotional', status: 'reviewing', createdAt: DateTime.now()).statusLabel, 'Sedang Ditinjau');
+      expect(BkPeerConcern(id: '1', targetDisplay: 't', reason: 'emotional', status: 'pending', createdAt: DateTime.now()).statusLabel, 'Menunggu penanganan');
+      expect(BkPeerConcern(id: '1', targetDisplay: 't', reason: 'emotional', status: 'reviewing', createdAt: DateTime.now()).statusLabel, 'Sedang ditinjau');
+      expect(BkPeerConcern(id: '1', targetDisplay: 't', reason: 'emotional', status: 'resolved', createdAt: DateTime.now()).statusLabel, 'Selesai ditindaklanjuti');
+      expect(BkPeerConcern(id: '1', targetDisplay: 't', reason: 'emotional', status: 'dismissed', createdAt: DateTime.now()).statusLabel, 'Ditutup tanpa tindak lanjut');
     });
   });
 
@@ -72,7 +74,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('M10_Student2'), findsOneWidget);
-      expect(find.text('Menunggu'), findsOneWidget);
+      expect(find.text('Menunggu penanganan'), findsOneWidget);
     });
   });
 

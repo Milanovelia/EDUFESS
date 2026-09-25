@@ -7,7 +7,10 @@ class BkPeerConcern {
     required this.status,
     required this.createdAt,
     this.handledAt,
+    this.closedAt,
     this.detailsPreview,
+    this.reporterResponse,
+    this.resolutionNote,
   });
 
   factory BkPeerConcern.fromMap(Map<String, dynamic> m) {
@@ -19,7 +22,12 @@ class BkPeerConcern {
       status: m['status'] as String,
       createdAt: DateTime.parse(m['created_at'] as String),
       handledAt: m['handled_at'] != null ? DateTime.parse(m['handled_at'] as String) : null,
+      closedAt: m['closed_at'] != null ? DateTime.parse(m['closed_at'] as String) : null,
       detailsPreview: m['details_preview'] as String?,
+      reporterResponse: m['reporter_response'] as String?,
+      // resolution_note exists only in counselor projections; the student
+      // projection never returns this column, so it stays null there.
+      resolutionNote: m['resolution_note'] as String?,
     );
   }
 
@@ -30,7 +38,10 @@ class BkPeerConcern {
   final String status;
   final DateTime createdAt;
   final DateTime? handledAt;
+  final DateTime? closedAt;
   final String? detailsPreview;
+  final String? reporterResponse;
+  final String? resolutionNote;
 
   String get reasonLabel {
     switch (reason) {
@@ -56,13 +67,13 @@ class BkPeerConcern {
   String get statusLabel {
     switch (status) {
       case 'pending':
-        return 'Menunggu';
+        return 'Menunggu penanganan';
       case 'reviewing':
-        return 'Sedang Ditinjau';
+        return 'Sedang ditinjau';
       case 'resolved':
-        return 'Selesai';
+        return 'Selesai ditindaklanjuti';
       case 'dismissed':
-        return 'Ditutup';
+        return 'Ditutup tanpa tindak lanjut';
       default:
         return status;
     }

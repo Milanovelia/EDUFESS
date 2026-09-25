@@ -81,10 +81,10 @@ class PeerConcernController extends Notifier<AsyncValue<void>> {
     }
   }
 
-  Future<String?> resolve(String id, {String? note}) async {
+  Future<String?> resolve(String id, {String? note, String? response}) async {
     state = const AsyncLoading();
     try {
-      await ref.read(peerConcernRepositoryProvider).resolve(id, note: note);
+      await ref.read(peerConcernRepositoryProvider).resolve(id, note: note, response: response);
       ref.invalidate(counselorPeerConcernQueueProvider);
       ref.invalidate(counselorPeerConcernHistoryProvider);
       ref.invalidate(peerConcernDetailProvider(id));
@@ -99,10 +99,10 @@ class PeerConcernController extends Notifier<AsyncValue<void>> {
     }
   }
 
-  Future<String?> dismiss(String id, {String? note}) async {
+  Future<String?> dismiss(String id, {String? note, String? response}) async {
     state = const AsyncLoading();
     try {
-      await ref.read(peerConcernRepositoryProvider).dismiss(id, note: note);
+      await ref.read(peerConcernRepositoryProvider).dismiss(id, note: note, response: response);
       ref.invalidate(counselorPeerConcernQueueProvider);
       ref.invalidate(counselorPeerConcernHistoryProvider);
       ref.invalidate(peerConcernDetailProvider(id));

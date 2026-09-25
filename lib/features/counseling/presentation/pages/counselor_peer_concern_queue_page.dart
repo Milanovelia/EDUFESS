@@ -116,7 +116,11 @@ class CounselorPeerConcernQueuePage extends ConsumerWidget {
                     return Card(
                       child: ListTile(
                         title: Text(concern.targetDisplay),
-                        subtitle: Text('${concern.reasonLabel} • ${concern.statusLabel}'),
+                        subtitle: Text(
+                          concern.closedAt == null
+                              ? '${concern.reasonLabel} • ${concern.statusLabel}'
+                              : '${concern.reasonLabel} • ${concern.statusLabel} • Ditutup ${concern.closedAt!.day}/${concern.closedAt!.month}/${concern.closedAt!.year}',
+                        ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push('${AppRoutes.counselorPeerConcernQueue}/${concern.id}'),
                       ),
