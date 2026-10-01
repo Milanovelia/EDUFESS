@@ -30,6 +30,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
+  /// Submission state owned by this form only. Never derived from the
+  /// shared auth controller, whose AsyncLoading also represents session
+  /// initialization and sign-out — neither of which may disable this form.
+  bool _isSubmitting = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -44,17 +49,29 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final form = _formKey.currentState;
     if (form == null) return;
     if (!form.validate()) return;
+    if (_isSubmitting) return;
 
-    // Reset any previous async error state so the next submit can proceed
-    ref.read(authControllerProvider.notifier).reset();
+    setState(() => _isSubmitting = true);
+    AuthException? error;
+    try {
+      // Reset any previous async error state so the next submit can proceed
+      ref.read(authControllerProvider.notifier).reset();
 
-    final controller = ref.read(authControllerProvider.notifier);
-    final error = await controller.signUp(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      pseudonym: _pseudonymController.text.trim(),
-      inviteCode: _inviteCodeController.text.trim(),
-    );
+      error = await ref
+          .read(authControllerProvider.notifier)
+          .signUp(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            pseudonym: _pseudonymController.text.trim(),
+            inviteCode: _inviteCodeController.text.trim(),
+          );
+    } finally {
+      // Submission ends when the request completes — before showing
+      // feedback dialogs, so no spinner outlives the network call.
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
 
     if (!mounted) return;
 
@@ -102,8 +119,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final isLoading = authState is AsyncLoading;
+    final isLoading = _isSubmitting;
 
     return Scaffold(
       body: SafeArea(

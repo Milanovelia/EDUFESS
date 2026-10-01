@@ -119,17 +119,27 @@ class AuthController extends Notifier<AsyncValue<void>> {
   }
 
   /// Signs out the current user and clears user-scoped state.
+  ///
+  /// Best-effort: every failure path still returns the controller to idle.
+  /// A sign-out error must never leave auth forms stuck in a loading state
+  /// (the router is session-driven and reacts independently of this future,
+  /// whose sole current caller is fire-and-forget).
   Future<void> signOut() async {
     state = const AsyncLoading();
-    await _repo.signOut();
-    // Invalidate user-scoped providers to prevent cross-user leakage
-    ref.invalidate(currentProfileProvider);
-    // Use try to avoid import cycles — providers will be invalidated via ref.invalidate if available
-    // Explicitly invalidate known user-scoped providers (best-effort, ignore if not found)
     try {
-      ref.invalidate(currentSessionProvider);
-    } catch (_) {}
-    state = const AsyncData(null);
+      await _repo.signOut();
+      // Invalidate user-scoped providers to prevent cross-user leakage
+      ref.invalidate(currentProfileProvider);
+      // Use try to avoid import cycles — providers will be invalidated via ref.invalidate if available
+      // Explicitly invalidate known user-scoped providers (best-effort, ignore if not found)
+      try {
+        ref.invalidate(currentSessionProvider);
+      } catch (_) {}
+    } catch (_) {
+      // Swallowed: logout intent is best-effort; state reset below is what matters.
+    } finally {
+      state = const AsyncData(null);
+    }
   }
 }
 

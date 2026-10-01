@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../data/auth_exception.dart';
 import '../providers/auth_controller.dart';
 
 /// Email + password login screen.
@@ -22,6 +23,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
+  /// Submission state owned by this form only. Never derived from the
+  /// shared auth controller, whose AsyncLoading also represents session
+  /// initialization and sign-out — neither of which may disable this form.
+  bool _isSubmitting = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -32,13 +38,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _handleLogin() async {
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
+    if (_isSubmitting) return;
 
-    final controller = ref.read(authControllerProvider.notifier);
-
-    final error = await controller.signIn(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+    setState(() => _isSubmitting = true);
+    AuthException? error;
+    try {
+      error = await ref
+          .read(authControllerProvider.notifier)
+          .signIn(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+    } finally {
+      // Submission ends when the request completes — before showing
+      // feedback or navigating, so no spinner outlives the network call.
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
 
     if (!mounted) return;
 
@@ -52,8 +69,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final isLoading = authState is AsyncLoading;
+    final isLoading = _isSubmitting;
 
     return Scaffold(
       body: SafeArea(
