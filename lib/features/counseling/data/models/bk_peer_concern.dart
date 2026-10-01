@@ -8,6 +8,7 @@ class BkPeerConcern {
     required this.createdAt,
     this.handledAt,
     this.closedAt,
+    this.withdrawnAt,
     this.detailsPreview,
     this.reporterResponse,
     this.resolutionNote,
@@ -23,6 +24,7 @@ class BkPeerConcern {
       createdAt: DateTime.parse(m['created_at'] as String),
       handledAt: m['handled_at'] != null ? DateTime.parse(m['handled_at'] as String) : null,
       closedAt: m['closed_at'] != null ? DateTime.parse(m['closed_at'] as String) : null,
+      withdrawnAt: m['withdrawn_at'] != null ? DateTime.parse(m['withdrawn_at'] as String) : null,
       detailsPreview: m['details_preview'] as String?,
       reporterResponse: m['reporter_response'] as String?,
       // resolution_note exists only in counselor projections; the student
@@ -39,6 +41,7 @@ class BkPeerConcern {
   final DateTime createdAt;
   final DateTime? handledAt;
   final DateTime? closedAt;
+  final DateTime? withdrawnAt;
   final String? detailsPreview;
   final String? reporterResponse;
   final String? resolutionNote;
@@ -74,6 +77,8 @@ class BkPeerConcern {
         return 'Selesai ditindaklanjuti';
       case 'dismissed':
         return 'Ditutup tanpa tindak lanjut';
+      case 'withdrawn':
+        return 'Ditarik';
       default:
         return status;
     }

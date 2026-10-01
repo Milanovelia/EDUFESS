@@ -94,6 +94,14 @@ class PeerConcernRepository {
     }
   }
 
+  Future<void> withdrawConcern(String concernId) async {
+    try {
+      await _client.rpc('withdraw_bk_peer_concern', params: {'p_concern_id': concernId});
+    } catch (e) {
+      throw PeerConcernException(_translateWithdrawError(e));
+    }
+  }
+
   String _translateSearchError(Object e) {
     final m = e.toString().toLowerCase();
     if (m.contains('too short')) return 'Kata kunci minimal 2 karakter.';
@@ -142,6 +150,16 @@ class PeerConcernRepository {
     if (m.contains('note too long') || m.contains('response too long')) return 'Catatan terlalu panjang.';
     if (m.contains('not authorized')) return 'Tidak memiliki akses.';
     return 'Gagal memproses laporan.';
+  }
+
+  String _translateWithdrawError(Object e) {
+    final m = e.toString().toLowerCase();
+    if (m.contains('sudah mulai ditangani')) return 'Laporan sudah mulai ditangani dan tidak dapat ditarik.';
+    if (m.contains('sudah ditarik')) return 'Laporan ini sudah ditarik.';
+    if (m.contains('sudah selesai')) return 'Laporan yang sudah selesai tidak dapat ditarik.';
+    if (m.contains('not found')) return 'Laporan tidak ditemukan.';
+    if (m.contains('not authorized')) return 'Kamu tidak memiliki akses untuk menarik laporan ini.';
+    return 'Gagal menarik laporan.';
   }
 }
 

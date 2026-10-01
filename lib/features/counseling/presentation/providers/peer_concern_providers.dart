@@ -114,6 +114,20 @@ class PeerConcernController extends Notifier<AsyncValue<void>> {
       return msg;
     }
   }
+
+  Future<String?> withdraw(String id) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(peerConcernRepositoryProvider).withdrawConcern(id);
+      ref.invalidate(studentPeerConcernsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = e is PeerConcernException ? e.message : 'Gagal menarik laporan.';
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
 }
 
 final peerConcernControllerProvider =
