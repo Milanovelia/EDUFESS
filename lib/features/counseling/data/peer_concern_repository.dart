@@ -115,6 +115,7 @@ class PeerConcernRepository {
     if (m.contains('cannot report self')) return 'Tidak bisa melaporkan diri sendiri.';
     if (m.contains('target must be student')) return 'Target harus siswa.';
     if (m.contains('already have')) return 'Kamu sudah memiliki laporan aktif untuk teman ini.';
+    if (m.contains('sudah memiliki laporan aktif')) return 'Kamu sudah memiliki laporan aktif untuk teman ini.';
     if (m.contains('invalid reason')) return 'Alasan tidak valid.';
     if (m.contains('details too long')) return 'Detail terlalu panjang.';
     if (m.contains('not authorized')) return 'Tidak memiliki akses.';
