@@ -84,11 +84,6 @@ class ProfilePage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
-              Center(
-                child: Chip(
-                  label: Text(profile.role.toUpperCase()),
-                ),
-              ),
               const SizedBox(height: AppSpacing.xl),
               const Divider(),
               ListTile(
@@ -116,7 +111,7 @@ class ProfilePage extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.info_outline),
                 title: const Text('Tentang EduFess'),
-                subtitle: const Text('M1 C2 — Authentication Foundation'),
+                subtitle: const Text('Komunitas berbagi pengetahuan sekolah'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   showAboutDialog(

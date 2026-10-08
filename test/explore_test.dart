@@ -78,13 +78,13 @@ void main() {
   group('Explore initial state', () {
     testWidgets('shows discovery text when no query/filter', (tester) async {
       await pumpExplore(tester);
-      expect(find.text('Jelajahi materi dan diskusi dari berbagai pelajaran.'), findsOneWidget);
+      expect(find.text('Jelajahi postingan dan diskusi komunitas.'), findsOneWidget);
     });
 
     testWidgets('shows search field', (tester) async {
       await pumpExplore(tester);
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('Cari judul, konten, atau topik...'), findsOneWidget);
+      expect(find.text('Cari judul atau konten...'), findsOneWidget);
     });
 
     testWidgets('shows no subject/topic filters', (tester) async {

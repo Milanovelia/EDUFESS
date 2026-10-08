@@ -70,7 +70,7 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
             child: TextField(
               controller: _controller,
               decoration: InputDecoration(
-                hintText: 'Cari judul, konten, atau topik...',
+                hintText: 'Cari judul atau konten...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchState.query.isNotEmpty || _controller.text.isNotEmpty
                     ? IconButton(icon: const Icon(Icons.clear), onPressed: _clearSearch)
@@ -189,7 +189,7 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.lg),
-          child: Text('Jelajahi materi dan diskusi dari berbagai pelajaran.', textAlign: TextAlign.center),
+          child: Text('Jelajahi postingan dan diskusi komunitas.', textAlign: TextAlign.center),
         ),
       );
     }
