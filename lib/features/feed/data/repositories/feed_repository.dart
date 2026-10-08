@@ -97,7 +97,7 @@ class FeedRepository {
     required String type,
     required String title,
     required String content,
-    required String subjectId,
+    String? subjectId,
     String? topicId,
     required bool isPseudonymous,
   }) async {

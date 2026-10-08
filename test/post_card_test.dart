@@ -56,4 +56,49 @@ void main() {
     expect(find.text('Informatika'), findsOneWidget);
     expect(find.text('Pemrograman'), findsOneWidget);
   });
+
+  testWidgets('PostCard without subject renders without crash', (tester) async {
+    final post = Post(
+      id: 'no-subject-id',
+      type: 'note',
+      title: 'Postingan bebas',
+      content: 'Konten tanpa mata pelajaran.',
+      isPseudonymous: false,
+      displayAuthor: 'M2_Student1',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(home: PostCard(post: post)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Postingan bebas'), findsOneWidget);
+    expect(find.text('Informatika'), findsNothing);
+  });
+
+  test('Post.fromMap parses null subject fields', () {
+    final now = DateTime.now().toIso8601String();
+    final post = Post.fromMap({
+      'id': 'null-subject',
+      'type': 'note',
+      'title': 't',
+      'content': 'c',
+      'is_pseudonymous': false,
+      'display_author': 'M2_Student1',
+      'subject_id': null,
+      'subject_name': null,
+      'subject_slug': null,
+      'topic_id': null,
+      'topic_name': null,
+      'topic_slug': null,
+      'created_at': now,
+      'updated_at': now,
+    });
+    expect(post.subjectId, isNull);
+    expect(post.subjectName, isNull);
+    expect(post.subjectSlug, isNull);
+  });
 }

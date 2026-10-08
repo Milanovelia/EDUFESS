@@ -57,7 +57,7 @@ class PostDetailPage extends ConsumerWidget {
                   spacing: AppSpacing.sm,
                   children: [
                     Chip(label: Text(PostType.labels[post.type] ?? post.type)),
-                    Chip(label: Text(post.subjectName)),
+                    if (post.subjectName != null) Chip(label: Text(post.subjectName!)),
                     if (post.topicName != null) Chip(label: Text(post.topicName!)),
                   ],
                 ),

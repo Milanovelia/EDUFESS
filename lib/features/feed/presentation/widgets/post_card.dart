@@ -36,11 +36,12 @@ class PostCard extends ConsumerWidget {
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  Chip(
-                    label: Text(post.subjectName, style: theme.textTheme.labelSmall),
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+                  if (post.subjectName != null)
+                    Chip(
+                      label: Text(post.subjectName!, style: theme.textTheme.labelSmall),
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   if (post.topicName != null)
                     Chip(
                       label: Text(post.topicName!, style: theme.textTheme.labelSmall),

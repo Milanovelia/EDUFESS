@@ -12,9 +12,9 @@ class Post {
     required this.content,
     required this.isPseudonymous,
     required this.displayAuthor,
-    required this.subjectId,
-    required this.subjectName,
-    required this.subjectSlug,
+    this.subjectId,
+    this.subjectName,
+    this.subjectSlug,
     this.topicId,
     this.topicName,
     this.topicSlug,
@@ -36,9 +36,9 @@ class Post {
       content: map['content'] as String,
       isPseudonymous: map['is_pseudonymous'] as bool,
       displayAuthor: map['display_author'] as String,
-      subjectId: map['subject_id'] as String,
-      subjectName: map['subject_name'] as String,
-      subjectSlug: map['subject_slug'] as String,
+      subjectId: map['subject_id'] as String?,
+      subjectName: map['subject_name'] as String?,
+      subjectSlug: map['subject_slug'] as String?,
       topicId: map['topic_id'] as String?,
       topicName: map['topic_name'] as String?,
       topicSlug: map['topic_slug'] as String?,
@@ -59,9 +59,9 @@ class Post {
   final String content;
   final bool isPseudonymous;
   final String displayAuthor;
-  final String subjectId;
-  final String subjectName;
-  final String subjectSlug;
+  final String? subjectId;
+  final String? subjectName;
+  final String? subjectSlug;
   final String? topicId;
   final String? topicName;
   final String? topicSlug;

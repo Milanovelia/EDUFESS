@@ -18,8 +18,6 @@ class CreatePostPage extends ConsumerStatefulWidget {
 class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedType;
-  String? _selectedSubjectId;
-  String? _selectedTopicId;
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   bool _isPseudonymous = false;
@@ -37,18 +35,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih tipe post.')));
       return;
     }
-    if (_selectedSubjectId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih mata pelajaran.')));
-      return;
-    }
-
     final controller = ref.read(createPostControllerProvider.notifier);
     final error = await controller.createPost(
       type: _selectedType!,
       title: _titleController.text.trim(),
       content: _contentController.text.trim(),
-      subjectId: _selectedSubjectId!,
-      topicId: _selectedTopicId,
+      subjectId: null,
+      topicId: null,
       isPseudonymous: _isPseudonymous,
     );
 
@@ -63,8 +56,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     _contentController.clear();
     setState(() {
       _selectedType = null;
-      _selectedSubjectId = null;
-      _selectedTopicId = null;
       _isPseudonymous = false;
     });
     ref.invalidate(feedPostsProvider);
@@ -74,8 +65,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
   @override
   Widget build(BuildContext context) {
-    final subjectsAsync = ref.watch(subjectsProvider);
-    final topicsAsync = _selectedSubjectId == null ? null : ref.watch(topicsProvider(_selectedSubjectId));
     final isLoading = ref.watch(createPostControllerProvider) is AsyncLoading;
 
     return Scaffold(
@@ -92,38 +81,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
               onChanged: isLoading ? null : (v) => setState(() => _selectedType = v),
               validator: (v) => v == null ? 'Wajib pilih tipe.' : null,
             ),
-            const SizedBox(height: AppSpacing.md),
-            subjectsAsync.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (e, _) => const Text('Mata pelajaran tidak tersedia.'),
-              data: (subjects) => DropdownButtonFormField<String>(
-                initialValue: _selectedSubjectId,
-                decoration: const InputDecoration(labelText: 'Mata Pelajaran *', border: OutlineInputBorder()),
-                items: subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
-                onChanged: isLoading
-                    ? null
-                    : (v) => setState(() {
-                          _selectedSubjectId = v;
-                          _selectedTopicId = null;
-                        }),
-                validator: (v) => v == null ? 'Wajib pilih mata pelajaran.' : null,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (_selectedSubjectId != null)
-              topicsAsync!.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => const Text('Gagal memuat topik.'),
-                data: (topics) => DropdownButtonFormField<String>(
-                  initialValue: _selectedTopicId,
-                  decoration: const InputDecoration(labelText: 'Topik (opsional)', border: OutlineInputBorder()),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('- Tanpa topik -')),
-                    ...topics.map((t) => DropdownMenuItem(value: t.id, child: Text(t.name))),
-                  ],
-                  onChanged: isLoading ? null : (v) => setState(() => _selectedTopicId = v),
-                ),
-              ),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _titleController,

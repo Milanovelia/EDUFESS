@@ -63,4 +63,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Siswa Anonim #B2C3'), findsOneWidget);
   });
+
+  testWidgets('PostDetail without subject hides subject chip', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          postDetailProvider.overrideWith(
+            (ref, id) async => Post(
+              id: 'test-id',
+              type: 'note',
+              title: 'Judul Bebas',
+              content: 'Konten tanpa mata pelajaran.',
+              isPseudonymous: false,
+              displayAuthor: 'M2_Student1',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: PostDetailPage(postId: 'test-id')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Judul Bebas'), findsOneWidget);
+    expect(find.text('Informatika'), findsNothing);
+  });
 }
