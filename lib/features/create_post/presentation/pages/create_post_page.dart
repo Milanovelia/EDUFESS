@@ -7,7 +7,7 @@ import '../../../feed/data/models/post.dart';
 import '../../../feed/presentation/providers/feed_providers.dart';
 import '../providers/create_post_controller.dart';
 
-/// Create post form — replaces M0 placeholder.
+/// Create post composer — content-first social input.
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
 
@@ -65,57 +65,91 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isLoading = ref.watch(createPostControllerProvider) is AsyncLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Buat Post')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          children: [
-            DropdownButtonFormField<String>(
-              initialValue: _selectedType,
-              decoration: const InputDecoration(labelText: 'Tipe Post *', border: OutlineInputBorder()),
-              items: PostType.all.map((t) => DropdownMenuItem(value: t, child: Text(PostType.labels[t]!))).toList(),
-              onChanged: isLoading ? null : (v) => setState(() => _selectedType = v),
-              validator: (v) => v == null ? 'Wajib pilih tipe.' : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Judul *', border: OutlineInputBorder()),
-              enabled: !isLoading,
-              maxLength: 200,
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Judul wajib diisi.' : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _contentController,
-              decoration: const InputDecoration(labelText: 'Konten *', border: OutlineInputBorder()),
-              enabled: !isLoading,
-              maxLines: 6,
-              maxLength: 10000,
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Konten wajib diisi.' : null,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<bool>(
-              initialValue: _isPseudonymous,
-              decoration: const InputDecoration(labelText: 'Post sebagai', border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(value: false, child: Text('Publik (tampilkan pseudonym)')),
-                DropdownMenuItem(value: true, child: Text('Pseudonymous (Siswa Anonim)')),
-              ],
-              onChanged: isLoading ? null : (v) => setState(() => _isPseudonymous = v ?? false),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton(
+      appBar: AppBar(
+        title: const Text('Buat Post'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: FilledButton.tonal(
               onPressed: isLoading ? null : _handleSubmit,
               child: isLoading
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('Posting'),
             ),
-          ],
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: [
+              TextFormField(
+                controller: _contentController,
+                decoration: const InputDecoration(
+                  hintText: 'Apa yang sedang kamu pikirkan?',
+                  border: InputBorder.none,
+                ),
+                style: theme.textTheme.bodyLarge,
+                enabled: !isLoading,
+                autofocus: true,
+                maxLines: 10,
+                minLines: 5,
+                maxLength: 10000,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Konten wajib diisi.' : null,
+              ),
+              const Divider(height: AppSpacing.lg),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Judul *',
+                  hintText: 'Beri judul singkat',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                enabled: !isLoading,
+                maxLength: 200,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Judul wajib diisi.' : null,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  for (final t in PostType.all)
+                    ChoiceChip(
+                      label: Text(PostType.labels[t]!),
+                      selected: _selectedType == t,
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onSelected: isLoading ? null : (_) => setState(() => _selectedType = t),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  ChoiceChip(
+                    label: Text(_isPseudonymous ? 'Anonim' : 'Publik', style: theme.textTheme.labelSmall),
+                    selected: _isPseudonymous,
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onSelected: isLoading ? null : (v) => setState(() => _isPseudonymous = v),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    _isPseudonymous ? 'Disamarkan sebagai Siswa Anonim' : 'Tampil sebagai pseudonym kamu',
+                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

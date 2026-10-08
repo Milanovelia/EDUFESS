@@ -95,6 +95,33 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Komentar', style: theme.textTheme.titleSmall),
                 const SizedBox(height: AppSpacing.sm),
+                CommentComposer(
+                  replyToName: _replyToName,
+                  onCancelReply: _replyToId == null
+                      ? null
+                      : () => setState(() {
+                            _replyToId = null;
+                            _replyToName = null;
+                          }),
+                  onSubmit: (content, isPseudonymous) async {
+                    final err = await ref
+                        .read(postInteractionProvider.notifier)
+                        .createComment(
+                          postId: post.id,
+                          parentId: _replyToId,
+                          content: content,
+                          isPseudonymous: isPseudonymous,
+                        );
+                    if (err == null) {
+                      setState(() {
+                        _replyToId = null;
+                        _replyToName = null;
+                      });
+                    }
+                    return err;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
                 commentsAsync.when(
                   loading: () => const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: CircularProgressIndicator())),
                   error: (e, _) => Center(
@@ -136,33 +163,6 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                           ),
                       ],
                     );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-                CommentComposer(
-                  replyToName: _replyToName,
-                  onCancelReply: _replyToId == null
-                      ? null
-                      : () => setState(() {
-                            _replyToId = null;
-                            _replyToName = null;
-                          }),
-                  onSubmit: (content, isPseudonymous) async {
-                    final err = await ref
-                        .read(postInteractionProvider.notifier)
-                        .createComment(
-                          postId: post.id,
-                          parentId: _replyToId,
-                          content: content,
-                          isPseudonymous: isPseudonymous,
-                        );
-                    if (err == null) {
-                      setState(() {
-                        _replyToId = null;
-                        _replyToName = null;
-                      });
-                    }
-                    return err;
                   },
                 ),
               ],

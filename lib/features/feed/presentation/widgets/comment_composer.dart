@@ -50,51 +50,80 @@ class _CommentComposerState extends State<CommentComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.replyToName != null)
-            Row(
-              children: [
-                Text('Membalas ${widget.replyToName}', style: Theme.of(context).textTheme.labelSmall),
-                const Spacer(),
-                TextButton(onPressed: widget.onCancelReply, child: const Text('Batal')),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Membalas ${widget.replyToName}',
+                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: widget.onCancelReply,
+                    borderRadius: BorderRadius.circular(16),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.close, size: 16),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          TextField(
-            controller: _controller,
-            enabled: !_loading,
-            decoration: const InputDecoration(
-              hintText: 'Tulis komentar...',
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-            maxLines: 3,
-            minLines: 1,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  enabled: !_loading,
+                  decoration: const InputDecoration(
+                    hintText: 'Tulis komentar...',
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _handleSend(),
+                  maxLines: 4,
+                  minLines: 1,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              IconButton.filledTonal(
+                tooltip: 'Kirim komentar',
+                onPressed: _loading ? null : _handleSend,
+                icon: _loading
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.send, size: 18),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: 2),
           Row(
             children: [
-              DropdownButton<bool>(
-                value: _isPseudonymous,
-                items: const [
-                  DropdownMenuItem(value: false, child: Text('Publik')),
-                  DropdownMenuItem(value: true, child: Text('Anonim')),
-                ],
-                onChanged: _loading ? null : (v) => setState(() => _isPseudonymous = v ?? false),
-              ),
-              const Spacer(),
-              FilledButton(
-                onPressed: _loading ? null : _handleSend,
-                child: _loading
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Kirim'),
+              ChoiceChip(
+                label: Text(_isPseudonymous ? 'Anonim' : 'Publik', style: theme.textTheme.labelSmall),
+                selected: _isPseudonymous,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                onSelected: _loading
+                    ? null
+                    : (v) => setState(() => _isPseudonymous = v),
               ),
             ],
           ),

@@ -23,48 +23,57 @@ Post _fakePost({required bool isPseudonymous, required String displayAuthor}) {
   );
 }
 
+Future<void> _pumpCard(WidgetTester tester, Post post) {
+  return tester.pumpWidget(
+    ProviderScope(
+      child: MaterialApp(home: Scaffold(body: PostCard(post: post))),
+    ),
+  );
+}
+
+String _authorLine(WidgetTester tester) => tester
+    .widgetList<Text>(find.byWidgetPredicate(
+      (w) => w is Text && w.textSpan != null,
+    ))
+    .single
+    .textSpan!
+    .toPlainText();
+
 void main() {
   testWidgets('PostCard shows public author pseudonym', (tester) async {
     final post = _fakePost(isPseudonymous: false, displayAuthor: 'M2_Student1');
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(home: PostCard(post: post)),
-      ),
-    );
-    expect(find.text('M2_Student1'), findsOneWidget);
+    await _pumpCard(tester, post);
+    expect(_authorLine(tester), contains('M2_Student1'));
     expect(find.text('Kenapa for loop lebih cocok?'), findsOneWidget);
   });
 
   testWidgets('PostCard shows pseudonymous alias', (tester) async {
     final post = _fakePost(isPseudonymous: true, displayAuthor: 'Siswa Anonim #A1B2');
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(home: PostCard(post: post)),
-      ),
-    );
-    expect(find.text('Siswa Anonim #A1B2'), findsOneWidget);
+    await _pumpCard(tester, post);
+    expect(_authorLine(tester), contains('Siswa Anonim #A1B2'));
     expect(find.text('M2_Student1'), findsNothing);
   });
 
   testWidgets('PostCard hides subject and topic chips', (tester) async {
     final post = _fakePost(isPseudonymous: false, displayAuthor: 'M2_Student1');
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(home: PostCard(post: post)),
-      ),
-    );
+    await _pumpCard(tester, post);
     expect(find.text('Informatika'), findsNothing);
     expect(find.text('Pemrograman'), findsNothing);
     expect(find.text('Kenapa for loop lebih cocok?'), findsOneWidget);
   });
 
+  testWidgets('PostCard shows avatar initial and inline timestamp', (tester) async {
+    final post = _fakePost(isPseudonymous: false, displayAuthor: 'M2_Student1');
+    await _pumpCard(tester, post);
+    expect(find.byType(CircleAvatar), findsOneWidget);
+    expect(find.text('M'), findsOneWidget);
+    expect(find.text('Simpan'), findsNothing);
+    expect(find.text('Tersimpan'), findsNothing);
+  });
+
   testWidgets('PostCard comment icon has explicit tap handler', (tester) async {
     final post = _fakePost(isPseudonymous: false, displayAuthor: 'M2_Student1');
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(home: PostCard(post: post)),
-      ),
-    );
+    await _pumpCard(tester, post);
     // The comment-count icon sits between helpful (favorite) and bookmark.
     final commentIcon = find.byIcon(Icons.chat_bubble_outline);
     expect(commentIcon, findsOneWidget);
@@ -93,11 +102,7 @@ void main() {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(home: PostCard(post: post)),
-      ),
-    );
+    await _pumpCard(tester, post);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Postingan bebas'), findsOneWidget);

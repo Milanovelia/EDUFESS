@@ -166,16 +166,23 @@ void main() {
   });
 
   group('pseudonymous display', () {
+    String authorLine(WidgetTester tester) => tester
+        .widgetList<Text>(find.byWidgetPredicate(
+          (w) => w is Text && w.textSpan != null,
+        ))
+        .map((w) => w.textSpan!.toPlainText())
+        .firstWhere((s) => s.isNotEmpty);
+
     testWidgets('result shows alias for pseudonymous', (tester) async {
       final post = _post('1', 'Judul Pseudo', isPseudo: true, author: 'Siswa Anonim #AB12');
       await pumpExplore(tester, searchState: ExploreSearchState(query: 'pseudo', results: [post]));
-      expect(find.text('Siswa Anonim #AB12'), findsOneWidget);
+      expect(authorLine(tester), contains('Siswa Anonim #AB12'));
     });
 
     testWidgets('result shows pseudonym for public', (tester) async {
       final post = _post('1', 'Judul Public', isPseudo: false, author: 'M4_Student1');
       await pumpExplore(tester, searchState: ExploreSearchState(query: 'public', results: [post]));
-      expect(find.text('M4_Student1'), findsOneWidget);
+      expect(authorLine(tester), contains('M4_Student1'));
     });
   });
 
