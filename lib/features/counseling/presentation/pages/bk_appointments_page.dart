@@ -175,9 +175,23 @@ class _StudentAppointmentCard extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text('Guru BK: ${appointment.counselorDisplay ?? 'Guru BK'}', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
-            if (appointment.scheduledStartAt != null) ...[
+            // P0-1: the schema permits one-sided-null scheduled times, so
+            // render whichever side exists instead of force-unwrapping both.
+            // Both null hides the line entirely.
+            if (appointment.scheduledStartAt != null || appointment.scheduledEndAt != null) ...[
               const SizedBox(height: 4),
-              Text('Terjadwal: ${_format(appointment.scheduledStartAt!)} - ${_format(appointment.scheduledEndAt!)}', style: theme.textTheme.bodySmall),
+              Text(
+                switch ((appointment.scheduledStartAt, appointment.scheduledEndAt)) {
+                  (final start, final end) when start != null && end != null =>
+                    'Terjadwal: ${_format(start)} - ${_format(end)}',
+                  (final start, _) when start != null =>
+                    'Terjadwal mulai: ${_format(start)}',
+                  (_, final end) when end != null =>
+                    'Terjadwal sampai: ${_format(end)}',
+                  _ => '',
+                },
+                style: theme.textTheme.bodySmall,
+              ),
             ],
             if (appointment.studentNote != null) ...[
               const SizedBox(height: 4),
