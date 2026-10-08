@@ -3,18 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../providers/feed_providers.dart';
+import '../widgets/comment_card.dart';
+import '../widgets/comment_composer.dart';
 import '../../data/models/post.dart';
 import '../../../moderation/presentation/widgets/report_dialog.dart';
 
-/// `/post/:id` — displays full post content.
-class PostDetailPage extends ConsumerWidget {
+/// `/post/:id` — post with social discussion surface below content.
+class PostDetailPage extends ConsumerStatefulWidget {
   const PostDetailPage({required this.postId, super.key});
 
   final String postId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final postAsync = ref.watch(postDetailProvider(postId));
+  ConsumerState<PostDetailPage> createState() => _PostDetailPageState();
+}
+
+class _PostDetailPageState extends ConsumerState<PostDetailPage> {
+  String? _replyToId;
+  String? _replyToName;
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
+    final postAsync = ref.watch(postDetailProvider(widget.postId));
+    final commentsAsync = ref.watch(commentsProvider(widget.postId));
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -32,7 +44,7 @@ class PostDetailPage extends ConsumerWidget {
                 const Text('Gagal memuat post.', textAlign: TextAlign.center),
                 const SizedBox(height: AppSpacing.md),
                 FilledButton(
-                  onPressed: () => ref.invalidate(postDetailProvider(postId)),
+                  onPressed: () => ref.invalidate(postDetailProvider(widget.postId)),
                   child: const Text('Coba lagi'),
                 ),
               ],
@@ -57,8 +69,8 @@ class PostDetailPage extends ConsumerWidget {
                   spacing: AppSpacing.sm,
                   children: [
                     Chip(label: Text(PostType.labels[post.type] ?? post.type)),
-                    if (post.subjectName != null) Chip(label: Text(post.subjectName!)),
-                    if (post.topicName != null) Chip(label: Text(post.topicName!)),
+                    if (post.hasBestAnswer)
+                      const Chip(label: Text('Terjawab')),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -80,6 +92,79 @@ class PostDetailPage extends ConsumerWidget {
                 Text(_timeAgo(post.createdAt), style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline)),
                 const Divider(height: AppSpacing.xl),
                 Text(post.content, style: theme.textTheme.bodyMedium),
+                const SizedBox(height: AppSpacing.lg),
+                Text('Komentar', style: theme.textTheme.titleSmall),
+                const SizedBox(height: AppSpacing.sm),
+                commentsAsync.when(
+                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: CircularProgressIndicator())),
+                  error: (e, _) => Center(
+                    child: Column(
+                      children: [
+                        Text(e.toString().replaceAll('PostException: ', ''), textAlign: TextAlign.center),
+                        const SizedBox(height: AppSpacing.sm),
+                        TextButton(
+                          onPressed: () => ref.invalidate(commentsProvider(widget.postId)),
+                          child: const Text('Coba lagi'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  data: (comments) {
+                    if (comments.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        child: Center(child: Text('Belum ada komentar. Jadilah yang pertama!')),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        for (final c in comments)
+                          CommentCard(
+                            comment: c,
+                            onReply: () => setState(() {
+                              _replyToId = c.id;
+                              _replyToName = c.displayAuthor;
+                            }),
+                            onDelete: c.isOwn
+                                ? () async {
+                                    final err = await ref.read(postInteractionProvider.notifier).deleteComment(commentId: c.id, postId: post.id);
+                                    if (err != null && context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                                    }
+                                  }
+                                : null,
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+                CommentComposer(
+                  replyToName: _replyToName,
+                  onCancelReply: _replyToId == null
+                      ? null
+                      : () => setState(() {
+                            _replyToId = null;
+                            _replyToName = null;
+                          }),
+                  onSubmit: (content, isPseudonymous) async {
+                    final err = await ref
+                        .read(postInteractionProvider.notifier)
+                        .createComment(
+                          postId: post.id,
+                          parentId: _replyToId,
+                          content: content,
+                          isPseudonymous: isPseudonymous,
+                        );
+                    if (err == null) {
+                      setState(() {
+                        _replyToId = null;
+                        _replyToName = null;
+                      });
+                    }
+                    return err;
+                  },
+                ),
               ],
             ),
           );

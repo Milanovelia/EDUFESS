@@ -46,15 +46,40 @@ void main() {
     expect(find.text('M2_Student1'), findsNothing);
   });
 
-  testWidgets('PostCard shows subject and topic', (tester) async {
+  testWidgets('PostCard hides subject and topic chips', (tester) async {
     final post = _fakePost(isPseudonymous: false, displayAuthor: 'M2_Student1');
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(home: PostCard(post: post)),
       ),
     );
-    expect(find.text('Informatika'), findsOneWidget);
-    expect(find.text('Pemrograman'), findsOneWidget);
+    expect(find.text('Informatika'), findsNothing);
+    expect(find.text('Pemrograman'), findsNothing);
+    expect(find.text('Kenapa for loop lebih cocok?'), findsOneWidget);
+  });
+
+  testWidgets('PostCard comment icon has explicit tap handler', (tester) async {
+    final post = _fakePost(isPseudonymous: false, displayAuthor: 'M2_Student1');
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(home: PostCard(post: post)),
+      ),
+    );
+    // The comment-count icon sits between helpful (favorite) and bookmark.
+    final commentIcon = find.byIcon(Icons.chat_bubble_outline);
+    expect(commentIcon, findsOneWidget);
+    final ancestors = find.ancestor(
+      of: commentIcon,
+      matching: find.byWidgetPredicate(
+        (w) => w is InkWell && w.onTap != null,
+      ),
+    );
+    // Inner comment InkWell (padded hit area) + outer card InkWell.
+    expect(ancestors, findsNWidgets(2));
+    final inner = tester.widgetList<InkWell>(ancestors).firstWhere(
+      (w) => w.child is Padding,
+    );
+    expect(inner.onTap, isNotNull);
   });
 
   testWidgets('PostCard without subject renders without crash', (tester) async {

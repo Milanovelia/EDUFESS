@@ -36,18 +36,6 @@ class PostCard extends ConsumerWidget {
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  if (post.subjectName != null)
-                    Chip(
-                      label: Text(post.subjectName!, style: theme.textTheme.labelSmall),
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  if (post.topicName != null)
-                    Chip(
-                      label: Text(post.topicName!, style: theme.textTheme.labelSmall),
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
                   if (post.hasBestAnswer)
                     Chip(
                       label: Text('Terjawab', style: theme.textTheme.labelSmall?.copyWith(color: Colors.white)),
@@ -89,7 +77,11 @@ class PostCard extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(width: AppSpacing.xs),
-                  _ActionIcon(icon: Icons.chat_bubble_outline, label: '${post.commentCount}'),
+                  _ActionIcon(
+                    icon: Icons.chat_bubble_outline,
+                    label: '${post.commentCount}',
+                    onTap: () => context.push('${AppRoutes.postDetailBase}/${post.id}'),
+                  ),
                   const SizedBox(width: AppSpacing.xs),
                   _ActionIcon(
                     icon: post.currentUserBookmarked ? Icons.bookmark : Icons.bookmark_border,

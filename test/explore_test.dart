@@ -87,11 +87,11 @@ void main() {
       expect(find.text('Cari judul, konten, atau topik...'), findsOneWidget);
     });
 
-    testWidgets('shows subjects', (tester) async {
+    testWidgets('shows no subject/topic filters', (tester) async {
       await pumpExplore(tester);
-      expect(find.text('Informatika'), findsOneWidget);
-      expect(find.text('Matematika'), findsOneWidget);
-      expect(find.text('Semua'), findsWidgets);
+      expect(find.text('Informatika'), findsNothing);
+      expect(find.text('Matematika'), findsNothing);
+      expect(find.text('Pemrograman'), findsNothing);
     });
   });
 
@@ -144,16 +144,10 @@ void main() {
   });
 
   group('filters', () {
-    testWidgets('subject filter chips', (tester) async {
+    testWidgets('subject/topic filters removed', (tester) async {
       await pumpExplore(tester);
-      expect(find.text('Informatika'), findsOneWidget);
-      expect(find.text('Matematika'), findsOneWidget);
-    });
-
-    testWidgets('topic filter shows after subject', (tester) async {
-      await pumpExplore(tester, searchState: const ExploreSearchState(subjectId: 'sub-1'), topics: fakeTopicsInf);
-      expect(find.text('Pemrograman'), findsOneWidget);
-      expect(find.text('Algoritma'), findsOneWidget);
+      expect(find.text('Informatika'), findsNothing);
+      expect(find.text('Pemrograman'), findsNothing);
     });
 
     testWidgets('post type filter', (tester) async {

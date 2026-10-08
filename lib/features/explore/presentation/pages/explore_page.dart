@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../../feed/data/models/post.dart';
-import '../../../feed/presentation/providers/feed_providers.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
 import '../providers/explore_search_providers.dart';
 
@@ -59,8 +58,6 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
   @override
   Widget build(BuildContext context) {
     final searchState = ref.watch(exploreSearchProvider);
-    final subjectsAsync = ref.watch(subjectsProvider);
-    final topicsAsync = ref.watch(topicsProvider(searchState.subjectId));
     final recent = ref.watch(recentSearchesProvider);
 
     return Scaffold(
@@ -115,74 +112,6 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
                 ],
               ),
             ),
-
-          // Subjects
-          SizedBox(
-            height: 56,
-            child: subjectsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => const Center(child: Text('Gagal memuat topik.')),
-              data: (subjects) {
-                if (subjects.isEmpty) {
-                  return const Center(child: Text('Belum ada kategori yang tersedia.'));
-                }
-                return ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Semua'),
-                      selected: searchState.subjectId == null,
-                      onSelected: (_) => ref.read(exploreSearchProvider.notifier).setSubject(null),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    ...subjects.map((s) => Padding(
-                          padding: const EdgeInsets.only(right: AppSpacing.sm),
-                          child: ChoiceChip(
-                            label: Text(s.name),
-                            selected: searchState.subjectId == s.id,
-                            onSelected: (_) => ref.read(exploreSearchProvider.notifier).setSubject(s.id),
-                          ),
-                        )),
-                  ],
-                );
-              },
-            ),
-          ),
-
-          // Topics (filtered by selected subject; when no subject show placeholder)
-          SizedBox(
-            height: 48,
-            child: topicsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => const Center(child: Text('Gagal memuat topik.')),
-              data: (topics) {
-                if (topics.isEmpty) {
-                  return const Center(child: Text('Belum ada kategori yang tersedia.'));
-                }
-                return ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Semua Topik'),
-                      selected: searchState.topicId == null,
-                      onSelected: (_) => ref.read(exploreSearchProvider.notifier).setTopic(null),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    ...topics.map((t) => Padding(
-                          padding: const EdgeInsets.only(right: AppSpacing.sm),
-                          child: ChoiceChip(
-                            label: Text(t.name),
-                            selected: searchState.topicId == t.id,
-                            onSelected: (_) => ref.read(exploreSearchProvider.notifier).setTopic(t.id),
-                          ),
-                        )),
-                  ],
-                );
-              },
-            ),
-          ),
 
           // Filters: Post type + Sort
           Padding(
