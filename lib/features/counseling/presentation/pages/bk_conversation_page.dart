@@ -176,6 +176,28 @@ class _BkConversationPageState extends ConsumerState<BkConversationPage> {
                   ),
             orElse: () => const SizedBox.shrink(),
           ),
+          // P0-3: typed provider errors surface here with retry instead
+          // of collapsing to an empty header. Wrap keeps the retry
+          // action bounded (no Row + infinite-width button risk).
+          if (convAsync.hasError)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: AppSpacing.sm,
+                children: [
+                  Text(
+                    convAsync.error.toString().contains('CounselingException') ? convAsync.error.toString().replaceAll('CounselingException: ', '') : 'Gagal memuat percakapan.',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  TextButton(
+                    onPressed: () => ref.invalidate(bkConversationProvider(widget.conversationId)),
+                    child: const Text('Coba lagi'),
+                  ),
+                ],
+              ),
+            ),
           if (_revealedPseudonym != null)
             Container(
               width: double.infinity,

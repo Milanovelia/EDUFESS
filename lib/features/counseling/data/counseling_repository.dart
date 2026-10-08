@@ -70,36 +70,27 @@ class CounselingRepository {
     }
   }
 
+  /// Returns the student's most recent active conversation, or null when
+  /// the student legitimately has none. RPC failures propagate as typed
+  /// [CounselingException] via [fetchStudentConversations]; they are never
+  /// swallowed to null. RPC-only minimal projection, no direct table read.
   Future<BkConversation?> getActiveConversation() async {
-    final user = _client.auth.currentUser;
-    if (user == null) return null;
-    try {
-      final data = await _client
-          .from('counseling_conversations')
-          .select()
-          .eq('student_id', user.id)
-          .inFilter('status', ['open', 'assigned'])
-          .order('updated_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-      if (data == null) return null;
-      return BkConversation.fromMap(data);
-    } catch (_) {
-      return null;
+    final list = await fetchStudentConversations();
+    for (final c in list) {
+      if (c.isActive) return c;
     }
+    return null;
   }
 
   Future<List<BkConversation>> fetchStudentConversations() async {
+    // P0-3: RPC-only minimal projection. Failures propagate as typed
+    // errors; no direct full-row fallback.
     try {
       final data = await _client.rpc('get_student_bk_conversations');
       final list = data as List;
       return list.map((e) => BkConversation.fromQueueMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      // fallback direct (should not happen)
-      final user = _client.auth.currentUser;
-      if (user == null) return [];
-      final data = await _client.from('counseling_conversations').select().eq('student_id', user.id).order('created_at', ascending: false);
-      return (data as List).map((e) => BkConversation.fromMap(e as Map<String, dynamic>)).toList();
+      throw CounselingException(_translateQueueError(e));
     }
   }
 
@@ -114,16 +105,14 @@ class CounselingRepository {
   }
 
   Future<List<BkConversation>> fetchCounselorAssigned() async {
+    // P0-3: RPC-only minimal projection. Failures propagate as typed
+    // errors; no direct full-row fallback.
     try {
       final data = await _client.rpc('get_counselor_assigned_conversations');
       final list = data as List;
       return list.map((e) => BkConversation.fromQueueMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      // fallback direct for older M6 (should not happen)
-      final user = _client.auth.currentUser;
-      if (user == null) return [];
-      final data = await _client.from('counseling_conversations').select().eq('counselor_id', user.id).order('created_at', ascending: false);
-      return (data as List).map((e) => BkConversation.fromMap(e as Map<String, dynamic>)).toList();
+      throw CounselingException(_translateQueueError(e));
     }
   }
 
@@ -392,6 +381,7 @@ class CounselingRepository {
 
   String _translateQueueError(Object e) {
     final m = e.toString().toLowerCase();
+    if (m.contains('tidak memiliki akses')) return 'Tidak memiliki akses.';
     if (m.contains('not authorized')) return 'Tidak memiliki akses.';
     if (m.contains('not authenticated')) return 'Harus login.';
     return 'Gagal memuat antrean.';

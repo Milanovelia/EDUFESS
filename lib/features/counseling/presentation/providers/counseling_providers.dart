@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/supabase_providers.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/counseling_repository.dart';
 import '../../data/models/bk_appointment.dart';
 import '../../data/models/bk_conversation.dart';
@@ -82,35 +83,31 @@ final myAvailabilityProvider =
 
 final bkConversationProvider = FutureProvider.family
     .autoDispose<BkConversation?, String>((ref, id) async {
+      // P0-3: resolve from role-appropriate RPC lists only. RPC failures
+      // propagate as typed errors (AsyncError); never swallowed to null,
+      // never replaced by a direct full-row select.
       final repo = ref.watch(counselingRepositoryProvider);
-      // Try student list first, then counselor, then direct fetch
-      try {
-        final list = await repo.fetchStudentConversations();
-        for (final c in list) {
+      final profile = await ref.watch(currentProfileProvider.future);
+      if (profile == null) {
+        throw const CounselingException('Harus login.');
+      }
+      if (profile.isStudent) {
+        for (final c in await repo.fetchStudentConversations()) {
           if (c.id == id) return c;
         }
-      } catch (_) {}
-      try {
-        final queue = await repo.fetchCounselorQueue();
-        for (final c in queue) {
+      } else if (profile.isCounselor) {
+        for (final c in await repo.fetchCounselorQueue()) {
           if (c.id == id) return c;
         }
-      } catch (_) {}
-      try {
-        final assigned = await repo.fetchCounselorAssigned();
-        for (final c in assigned) {
+        for (final c in await repo.fetchCounselorAssigned()) {
           if (c.id == id) return c;
         }
-      } catch (_) {}
-      // Fallback direct (participant can select own via RLS)
-      final client = ref.watch(supabaseClientProvider);
-      final data = await client
-          .from('counseling_conversations')
-          .select()
-          .eq('id', id)
-          .maybeSingle();
-      if (data == null) return null;
-      return BkConversation.fromMap(data);
+      } else {
+        throw const CounselingException('Tidak memiliki akses.');
+      }
+      // Not found in any list the caller may see: legitimate null
+      // (denied/nonexistent), distinct from a thrown RPC error above.
+      return null;
     });
 
 class CounselingController extends Notifier<AsyncValue<void>> {
