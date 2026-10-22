@@ -133,12 +133,6 @@ flutter run
 
 ---
 
-## 📄 Dokumen Laporan Lengkap
-Berkas dokumentasi spesifikasi rekayasa perangkat lunak terpadu tersedia pada direktori `laporan/`:
-- **[`laporan/Laporan_PRD_SRD_EduFess_FIX.docx`](laporan/Laporan_PRD_SRD_EduFess_FIX.docx)**: Dokumen Word resmi lengkap dengan 20 tabel terperinci, spesifikasi use case UC-01 s.d. UC-08, 10 invariansi privasi, dan diagram visual (Use Case, Class, Activity BK & Peduli Teman, DFD Level 0, ERD, serta Wireframe antarmuka 7.1 s.d. 7.8).
-- **[`laporan/Laporan_Master_Final_EduFess.docx`](laporan/Laporan_Master_Final_EduFess.docx)**: Dokumen master final komprehensif mencakup seluruh progres 1–4 dan target 4–5 pertemuan ke depan.
-
----
 
 ## ⚖️ Lisensi & Hak Cipta
 Hak Cipta © 2026 **Mila Novelia** (NPM 2413025051)  
