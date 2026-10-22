@@ -74,6 +74,36 @@ class _FakeRecentNotifier extends RecentSearchesNotifier {
   List<String> build() => _list;
 }
 
+/// Search notifier that records calls instead of hitting Supabase.
+class _RecordingSearchNotifier extends ExploreSearchNotifier {
+  _RecordingSearchNotifier(this._state);
+  final ExploreSearchState _state;
+  final List<String> queries = [];
+  @override
+  ExploreSearchState build() => _state;
+  @override
+  Future<void> setQuery(String query) async => queries.add(query);
+  @override
+  Future<void> setPostType(String? type) async {}
+  @override
+  Future<void> setSort(String sort) async {}
+  @override
+  Future<void> refresh() async {}
+  @override
+  Future<void> loadMore() async {}
+}
+
+/// Recent-search notifier that records additions without mutating visible state.
+class _RecordingRecentNotifier extends RecentSearchesNotifier {
+  _RecordingRecentNotifier(this._list);
+  final List<String> _list;
+  final List<String> added = [];
+  @override
+  List<String> build() => _list;
+  @override
+  void add(String query) => added.add(query);
+}
+
 void main() {
   group('Explore initial state', () {
     testWidgets('shows discovery text when no query/filter', (tester) async {
@@ -131,15 +161,53 @@ void main() {
       expect(find.text('Dart Lanjutan'), findsOneWidget);
     });
 
-    testWidgets('shows no results filtered message', (tester) async {
+    testWidgets('shows query-specific empty message', (tester) async {
       await pumpExplore(tester, searchState: const ExploreSearchState(query: 'tidakada', results: [], hasMore: false));
-      expect(find.text('Coba ubah kata kunci atau filter pencarian.'), findsOneWidget);
+      expect(find.text('Tidak ada hasil'), findsOneWidget);
+      expect(find.text('Tidak ada hasil untuk "tidakada". Coba kata kunci lain.'), findsOneWidget);
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+    });
+
+    testWidgets('shows filter-specific empty message without a query', (tester) async {
+      await pumpExplore(tester, searchState: const ExploreSearchState(postType: 'note', results: [], hasMore: false));
+      expect(find.text('Tidak ada hasil dengan filter ini. Coba hapus filter.'), findsOneWidget);
     });
 
     testWidgets('shows error with retry', (tester) async {
       await pumpExplore(tester, searchState: const ExploreSearchState(query: 'flutter', error: 'Pencarian gagal. Coba lagi.', results: []));
       expect(find.text('Pencarian gagal. Coba lagi.'), findsOneWidget);
       expect(find.text('Coba lagi'), findsOneWidget);
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+    });
+
+    testWidgets('shows progress while refreshing existing results', (tester) async {
+      final posts = [_post('1', 'Flutter Dasar')];
+      final state = ExploreSearchState(query: 'flutter', loading: true, results: posts);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            subjectsProvider.overrideWith((ref) async => fakeSubjects),
+            topicsProvider.overrideWith((ref, subjectId) async => []),
+            exploreSearchProvider.overrideWith(() => _FakeSearchNotifier(state)),
+          ],
+          child: const MaterialApp(home: ExplorePage()),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.text('Flutter Dasar'), findsOneWidget);
+    });
+
+    testWidgets('keeps stale results and shows inline error when refresh fails', (tester) async {
+      final posts = [_post('1', 'Flutter Dasar')];
+      await pumpExplore(
+        tester,
+        searchState: ExploreSearchState(query: 'flutter', error: 'Pencarian gagal. Coba lagi.', results: posts),
+      );
+      expect(find.text('Flutter Dasar'), findsOneWidget);
+      expect(find.text('Pencarian gagal. Coba lagi.'), findsOneWidget);
+      expect(find.text('Coba lagi'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
     });
   });
 
@@ -226,6 +294,32 @@ void main() {
     testWidgets('clear history button', (tester) async {
       await pumpExplore(tester, recent: ['flutter']);
       expect(find.text('Hapus'), findsOneWidget);
+    });
+
+    testWidgets('tapping a recent query fills the field, places the cursor at the end, and records recency', (tester) async {
+      final search = _RecordingSearchNotifier(const ExploreSearchState());
+      final recent = _RecordingRecentNotifier(['aljabar']);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            subjectsProvider.overrideWith((ref) async => fakeSubjects),
+            topicsProvider.overrideWith((ref, subjectId) async => fakeTopicsInf),
+            exploreSearchProvider.overrideWith(() => search),
+            recentSearchesProvider.overrideWith(() => recent),
+          ],
+          child: const MaterialApp(home: ExplorePage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('aljabar'));
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.controller!.text, 'aljabar');
+      expect(field.controller!.selection, const TextSelection.collapsed(offset: 7));
+      expect(search.queries, ['aljabar']);
+      expect(recent.added, ['aljabar']);
     });
 
     testWidgets('hides recent when query not empty', (tester) async {

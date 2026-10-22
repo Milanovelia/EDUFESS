@@ -153,6 +153,16 @@ class CounselingRepository {
     }
   }
 
+  /// Soft-delete a counseling message the caller sent.
+  /// Only the original sender may delete their own message.
+  Future<void> deleteMessage(String messageId) async {
+    try {
+      await _client.rpc('delete_counseling_message', params: {'p_message_id': messageId});
+    } catch (e) {
+      throw CounselingException(_translateDeleteMessageError(e));
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Availability
   // --------------------------------------------------------------------------
@@ -405,6 +415,14 @@ class CounselingRepository {
     return 'Pesan gagal dikirim.';
   }
 
+  String _translateDeleteMessageError(Object e) {
+    final m = e.toString().toLowerCase();
+    if (m.contains('not authenticated')) return 'Harus login.';
+    if (m.contains('not your message')) return 'Kamu hanya bisa menghapus pesanmu sendiri.';
+    if (m.contains('not found') || m.contains('already deleted')) return 'Pesan tidak ditemukan.';
+    return 'Gagal menghapus pesan.';
+  }
+
   String _translateRevealError(Object e) {
     final m = e.toString().toLowerCase();
     if (m.contains('reason required')) return 'Alasan wajib diisi.';
@@ -476,6 +494,27 @@ class CounselingRepository {
     if (m.contains('not authenticated')) return 'Harus login.';
     if (m.contains('not found')) return 'Percakapan tidak ditemukan.';
     return 'Gagal menyelesaikan percakapan.';
+  }
+
+  // --------------------------------------------------------------------------
+  // Mood soft-delete (student only, own data via security-definer RPC)
+  // --------------------------------------------------------------------------
+
+  /// Soft-deletes a mood check-in. Server validates ownership and student role.
+  Future<void> deleteMoodCheckin(String checkinId) async {
+    try {
+      await _client.rpc('delete_mood_checkin', params: {'p_checkin_id': checkinId});
+    } catch (e) {
+      throw CounselingException(_translateMoodDeleteError(e));
+    }
+  }
+
+  String _translateMoodDeleteError(Object e) {
+    final m = e.toString().toLowerCase();
+    if (m.contains('not found') || m.contains('already deleted')) return 'Check-in tidak ditemukan atau sudah dihapus.';
+    if (m.contains('not authorized')) return 'Kamu hanya bisa menghapus check-in milikmu.';
+    if (m.contains('not authenticated')) return 'Harus login.';
+    return 'Gagal menghapus check-in.';
   }
 }
 

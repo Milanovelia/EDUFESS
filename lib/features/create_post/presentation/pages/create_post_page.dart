@@ -70,11 +70,18 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buat Post'),
+        title: Text(
+          'Buat Post',
+          style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 16),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: FilledButton.tonal(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 36),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              ),
               onPressed: isLoading ? null : _handleSubmit,
               child: isLoading
                   ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
@@ -132,21 +139,51 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: [
-                  ChoiceChip(
-                    label: Text(_isPseudonymous ? 'Anonim' : 'Publik', style: theme.textTheme.labelSmall),
-                    selected: _isPseudonymous,
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    onSelected: isLoading ? null : (v) => setState(() => _isPseudonymous = v),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    _isPseudonymous ? 'Disamarkan sebagai Siswa Anonim' : 'Tampil sebagai pseudonym kamu',
-                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
-                  ),
-                ],
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                ),
+                onPressed: isLoading
+                    ? null
+                    : () => setState(() => _isPseudonymous = !_isPseudonymous),
+                icon: Icon(
+                  _isPseudonymous ? Icons.visibility_off_outlined : Icons.public_outlined,
+                  size: 20,
+                  color: _isPseudonymous
+                      ? theme.colorScheme.secondary
+                      : theme.colorScheme.primary,
+                ),
+                label: Row(
+                  children: [
+                    Text(
+                      _isPseudonymous ? 'Anonim' : 'Publik',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        _isPseudonymous
+                            ? 'Disamarkan sebagai Siswa Anonim'
+                            : 'Tampil sebagai pseudonym kamu',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.end,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton(
+                onPressed: isLoading ? null : _handleSubmit,
+                child: isLoading
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Publikasikan'),
               ),
             ],
           ),

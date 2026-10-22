@@ -11,8 +11,11 @@ abstract final class AppSpacing {
 }
 
 /// Shared corner radius scale.
+///
+/// Compact, Pensiv-inspired geometry: inputs and small controls sit near 7,
+/// cards near 11, and large emphasis surfaces stay at 14.
 abstract final class AppRadius {
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 20;
+  static const double sm = 7;
+  static const double md = 11;
+  static const double lg = 14;
 }

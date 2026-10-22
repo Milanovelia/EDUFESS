@@ -139,6 +139,35 @@ class _BkMoodPageState extends ConsumerState<BkMoodPage> {
                                 if (m.note != null) Text(m.note!, style: const TextStyle(fontStyle: FontStyle.italic)),
                               ],
                             ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              tooltip: 'Hapus check-in',
+                              onPressed: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Hapus Check-In?'),
+                                    content: const Text('Check-in ini akan dihapus dari riwayatmu.'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                                      FilledButton(
+                                        style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        child: const Text('Hapus'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed == true && context.mounted) {
+                                  final err = await ref.read(moodControllerProvider.notifier).deleteMoodCheckin(m.id);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(err ?? 'Check-in berhasil dihapus.')),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
                           ),
                         )),
                   ],

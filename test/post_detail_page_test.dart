@@ -131,4 +131,12 @@ void main() {
     expect(find.text('Belum ada komentar. Jadilah yang pertama!'), findsOneWidget);
     expect(find.byType(CommentComposer), findsOneWidget);
   });
+
+  testWidgets('PostDetail uses card-parity author header', (tester) async {
+    await pumpDetail(tester);
+    expect(find.byType(CircleAvatar), findsOneWidget);
+    expect(find.text('M2_Student1'), findsOneWidget);
+    // Type metadata demoted to quiet label, Terjawab kept as text.
+    expect(find.byType(Chip), findsNothing);
+  });
 }

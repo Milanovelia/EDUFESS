@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../app/theme/app_theme.dart';
 import '../../data/models/comment.dart';
 import '../../../moderation/presentation/widgets/report_dialog.dart';
 
@@ -25,6 +26,7 @@ class CommentCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final palette = AppPalette.of(context);
     return Container(
       margin: EdgeInsets.only(
         left: comment.isReply ? AppSpacing.lg : 0,
@@ -32,9 +34,9 @@ class CommentCard extends ConsumerWidget {
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: comment.isBestAnswer ? Colors.green.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        color: comment.isBestAnswer ? palette.positive.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: comment.isBestAnswer ? Border.all(color: Colors.green) : null,
+        border: comment.isBestAnswer ? Border.all(color: palette.positive) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,8 +50,8 @@ class CommentCard extends ConsumerWidget {
               if (comment.isBestAnswer)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
-                  child: const Text('Jawaban Terbaik', style: TextStyle(color: Colors.white, fontSize: 11)),
+                  decoration: BoxDecoration(color: palette.positive, borderRadius: BorderRadius.circular(12)),
+                  child: Text('Jawaban Terbaik', style: TextStyle(color: palette.onPositive, fontSize: 11)),
                 ),
             ],
           ),

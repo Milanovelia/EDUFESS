@@ -129,6 +129,46 @@ class PostInteractionController extends Notifier<AsyncValue<void>> {
     }
   }
 
+  Future<String?> deletePost(String postId) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(feedRepositoryProvider).softDeletePost(postId);
+      ref.invalidate(feedPostsProvider);
+      ref.invalidate(savedPostsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      state = AsyncError(e.toString(), StackTrace.current);
+      return 'Gagal menghapus post.';
+    }
+  }
+
+  Future<String?> editPost({
+    required String postId,
+    required String title,
+    required String content,
+    required String type,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(feedRepositoryProvider).updatePost(
+            postId: postId,
+            title: title,
+            content: content,
+            type: type,
+          );
+      ref.invalidate(feedPostsProvider);
+      ref.invalidate(postDetailProvider(postId));
+      ref.invalidate(savedPostsProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      final msg = translatePostError(e);
+      state = AsyncError(msg, StackTrace.current);
+      return msg;
+    }
+  }
+
   Future<String?> deleteComment({required String commentId, required String postId}) async {
     state = const AsyncLoading();
     try {

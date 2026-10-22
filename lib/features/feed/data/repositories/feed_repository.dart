@@ -120,6 +120,21 @@ class FeedRepository {
     await _client.from('posts').update({'deleted_at': DateTime.now().toIso8601String()}).eq('id', postId);
   }
 
+  /// Edit own post via security-definer RPC (validates ownership server-side).
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String type,
+  }) async {
+    await _client.rpc('update_post', params: {
+      'p_post_id': postId,
+      'p_title': title,
+      'p_content': content,
+      'p_type': type,
+    });
+  }
+
   // --------------------------------------------------------------------------
   // Comments (via privacy-safe view)
   // --------------------------------------------------------------------------
@@ -244,6 +259,12 @@ String translatePostError(Object error) {
   }
   if (msg.contains('post has been deleted')) {
     return 'Post sudah dihapus.';
+  }
+  if (msg.contains('not authorized')) {
+    return 'Kamu hanya bisa mengubah post milikmu.';
+  }
+  if (msg.contains('post not found')) {
+    return 'Post tidak ditemukan atau sudah dihapus.';
   }
   return 'Post gagal dibuat. Coba lagi.';
 }

@@ -26,6 +26,7 @@ class Post {
     this.commentCount = 0,
     this.hasBestAnswer = false,
     this.authorId,
+    this.isOwn = false,
   });
 
   factory Post.fromMap(Map<String, dynamic> map) {
@@ -50,6 +51,7 @@ class Post {
       commentCount: (map['comment_count'] as int?) ?? 0,
       hasBestAnswer: map['has_best_answer'] as bool? ?? false,
       authorId: map['author_id'] as String?,
+      isOwn: map['is_own'] as bool? ?? false,
     );
   }
 
@@ -73,6 +75,13 @@ class Post {
   final int commentCount;
   final bool hasBestAnswer;
   final String? authorId;
+
+  /// True when the current authenticated user authored this post.
+  /// Populated server-side via [posts_feed] view's author_id compared
+  /// in Flutter to [Supabase.instance.client.auth.currentUser?.id].
+  /// The [isOwn] field is a convenience pre-computed flag when the view
+  /// provides it; otherwise falls back to false (safe default).
+  final bool isOwn;
 
   /// Short preview for feed cards (max 120 chars).
   String get preview {

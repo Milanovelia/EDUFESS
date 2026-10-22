@@ -16,9 +16,28 @@ class CounselorPeerConcernDetailPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('Detail Peduli Teman')),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Padding(padding: const EdgeInsets.all(AppSpacing.lg), child: Text('Gagal memuat: ${e.toString().replaceAll('PeerConcernException: ', '')}', textAlign: TextAlign.center))),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Gagal memuat: ${e.toString().replaceAll('PeerConcernException: ', '')}',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                FilledButton(
+                  onPressed: () => ref.invalidate(peerConcernDetailProvider(concernId)),
+                  child: const Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (concern) {
-          final isPendingOrReviewing = concern.status == 'pending' || concern.status == 'reviewing';
+          final isPending = concern.status == 'pending';
+          final isReviewing = concern.status == 'reviewing';
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -38,7 +57,25 @@ class CounselorPeerConcernDetailPage extends ConsumerWidget {
                 ] else
                   const Text('Tidak ada detail.'),
                 const SizedBox(height: AppSpacing.xl),
-                if (isPendingOrReviewing) ...[
+                if (isPending) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () async {
+                        final err = await ref.read(peerConcernControllerProvider.notifier).claim(concern.id);
+                        if (err != null && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                        } else if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Laporan berhasil diklaim.')));
+                          ref.invalidate(counselorPeerConcernQueueProvider);
+                          ref.invalidate(counselorPeerConcernHistoryProvider);
+                          ref.invalidate(peerConcernDetailProvider(concern.id));
+                        }
+                      },
+                      child: const Text('Tangani Laporan Ini'),
+                    ),
+                  ),
+                ] else if (isReviewing) ...[
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(

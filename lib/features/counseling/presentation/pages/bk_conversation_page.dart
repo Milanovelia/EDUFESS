@@ -49,7 +49,7 @@ class _BkConversationPageState extends ConsumerState<BkConversationPage> {
     return Scaffold(
       appBar: AppBar(
         title: convAsync.maybeWhen(
-          data: (c) => Text(c == null ? 'Konseling' : 'Konseling • ${c.studentAlias}'),
+          data: (c) => Text(c == null ? 'Konseling' : 'Konseling â€¢ ${c.studentAlias}'),
           orElse: () => const Text('Konseling'),
         ),
         actions: [
@@ -242,9 +242,7 @@ class _BkConversationPageState extends ConsumerState<BkConversationPage> {
                     itemBuilder: (c, i) {
                       final m = messages[i];
                       final isMine = m.isMine ?? false;
-                      return Align(
-                        alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
+                      final bubble = Container(
                           margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                           padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
@@ -259,7 +257,34 @@ class _BkConversationPageState extends ConsumerState<BkConversationPage> {
                               Text(_timeAgo(m.createdAt), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.outline, fontSize: 10)),
                             ],
                           ),
-                        ),
+                        );
+                      return Align(
+                        alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+                        child: isMine
+                            ? GestureDetector(
+                                onLongPress: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Hapus Pesan'),
+                                      content: const Text('Pesan ini akan dihapus dan tidak bisa dikembalikan.'),
+                                      actions: [
+                                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Hapus')),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm != true || !context.mounted) return;
+                                  final err = await ref
+                                      .read(counselingControllerProvider.notifier)
+                                      .deleteMessage(messageId: m.id, conversationId: widget.conversationId);
+                                  if (err != null && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                                  }
+                                },
+                                child: bubble,
+                              )
+                            : bubble,
                       );
                     },
                   ),

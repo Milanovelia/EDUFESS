@@ -32,6 +32,9 @@ class CreatePostController extends Notifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return null;
     } catch (e) {
+      // Log raw so logcat exposes DB/RLS root cause without leaking to UI.
+      // ignore: avoid_print
+      print('[CreatePost] raw error: $e');
       final msg = translatePostError(e);
       state = AsyncError(msg, StackTrace.current);
       return msg;

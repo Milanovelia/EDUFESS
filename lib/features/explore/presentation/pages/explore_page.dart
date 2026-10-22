@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/widgets/state_views.dart';
 import '../../../feed/data/models/post.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
 import '../providers/explore_search_providers.dart';
@@ -51,8 +52,23 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
 
   void _clearSearch() {
     _debounce?.cancel();
-    _controller.clear();
+    setState(_controller.clear);
+    FocusScope.of(context).unfocus();
     ref.read(exploreSearchProvider.notifier).clearQuery();
+  }
+
+  /// Replays a previous query: fills the field with a valid cursor, records
+  /// recency, and runs the search.
+  void _applyRecent(String query) {
+    _debounce?.cancel();
+    setState(() {
+      _controller.value = TextEditingValue(
+        text: query,
+        selection: TextSelection.collapsed(offset: query.length),
+      );
+    });
+    ref.read(exploreSearchProvider.notifier).setQuery(query);
+    ref.read(recentSearchesProvider.notifier).add(query);
   }
 
   @override
@@ -61,7 +77,12 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
     final recent = ref.watch(recentSearchesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Explore')),
+      appBar: AppBar(
+        title: Text(
+          'Jelajah',
+          style: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 16),
+        ),
+      ),
       body: Column(
         children: [
           // Search field
@@ -100,12 +121,13 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
                   ),
                   Wrap(
                     spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
                     children: recent.map((q) => ActionChip(
-                          label: Text(q),
-                          onPressed: () {
-                            _controller.text = q;
-                            ref.read(exploreSearchProvider.notifier).setQuery(q);
-                          },
+                          label: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 220),
+                            child: Text(q, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                          onPressed: () => _applyRecent(q),
                         )).toList(),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -165,72 +187,107 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
   }
 
   Widget _buildResults(BuildContext context, ExploreSearchState state) {
+    final notifier = ref.read(exploreSearchProvider.notifier);
+
     if (state.loading && state.results.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
     if (state.error != null && state.results.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48),
-              const SizedBox(height: AppSpacing.md),
-              Text(state.error!, textAlign: TextAlign.center),
-              const SizedBox(height: AppSpacing.md),
-              FilledButton(onPressed: () => ref.read(exploreSearchProvider.notifier).refresh(), child: const Text('Coba lagi')),
-            ],
-          ),
+      return RefreshableStateView(
+        onRefresh: notifier.refresh,
+        child: ErrorStateView(
+          title: 'Pencarian gagal',
+          message: state.error!,
+          onRetry: notifier.refresh,
         ),
       );
     }
     if (!state.hasQueryOrFilter) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg),
-          child: Text('Jelajahi postingan dan diskusi komunitas.', textAlign: TextAlign.center),
-        ),
+      return const EmptyStateView(
+        icon: Icons.explore_outlined,
+        title: 'Temukan pengetahuan',
+        message: 'Jelajahi postingan dan diskusi komunitas.',
       );
     }
     if (state.results.isEmpty) {
-      // Distinguish filtered no results vs plain no results
-      final hasFilter = state.subjectId != null || state.topicId != null || state.postType != null;
-      final msg = state.query.trim().isNotEmpty || hasFilter ? 'Coba ubah kata kunci atau filter pencarian.' : 'Tidak ada hasil yang cocok.';
-      // For plain no results without filter, use "Tidak ada hasil yang cocok."
-      // For filtered, suggest changing filter.
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Text(state.query.trim().isNotEmpty || hasFilter ? 'Coba ubah kata kunci atau filter pencarian.' : msg, textAlign: TextAlign.center),
+      final query = state.query.trim();
+      return RefreshableStateView(
+        onRefresh: notifier.refresh,
+        child: EmptyStateView(
+          icon: Icons.search_off,
+          title: 'Tidak ada hasil',
+          message: query.isNotEmpty
+              ? 'Tidak ada hasil untuk "$query". Coba kata kunci lain.'
+              : 'Tidak ada hasil dengan filter ini. Coba hapus filter.',
         ),
       );
     }
-    return RefreshIndicator(
-      onRefresh: () async => ref.read(exploreSearchProvider.notifier).refresh(),
-      child: ListView.builder(
-        itemCount: state.results.length + 1,
-        itemBuilder: (context, i) {
-          if (i == state.results.length) {
-            if (state.hasMore) {
-              return Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Column(
-                  children: [
-                    if (state.loading) const CircularProgressIndicator(),
-                    const SizedBox(height: AppSpacing.sm),
-                    FilledButton.tonal(
-                      onPressed: state.loading ? null : () => ref.read(exploreSearchProvider.notifier).loadMore(),
-                      child: const Text('Muat lebih banyak'),
-                    ),
-                  ],
-                ),
-              );
-            }
-            return const SizedBox(height: AppSpacing.md);
-          }
-          return PostCard(post: state.results[i]);
-        },
+    return Column(
+      children: [
+        if (state.loading) const LinearProgressIndicator(minHeight: 2),
+        if (state.error != null) _InlineErrorBanner(message: state.error!, onRetry: notifier.refresh),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: notifier.refresh,
+            child: ListView.builder(
+              itemCount: state.results.length + 1,
+              itemBuilder: (context, i) {
+                if (i == state.results.length) {
+                  if (state.hasMore) {
+                    return Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Column(
+                        children: [
+                          if (state.loading) const CircularProgressIndicator(),
+                          const SizedBox(height: AppSpacing.sm),
+                          FilledButton.tonal(
+                            onPressed: state.loading ? null : () => notifier.loadMore(),
+                            child: const Text('Muat lebih banyak'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox(height: AppSpacing.md);
+                }
+                return PostCard(post: state.results[i]);
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Slim error strip shown when a refresh/pagination fails but stale results
+/// are still on screen.
+class _InlineErrorBanner extends StatelessWidget {
+  const _InlineErrorBanner({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.sm, AppSpacing.xs),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, size: 18, color: theme.colorScheme.onErrorContainer),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
+              ),
+            ),
+            TextButton(onPressed: onRetry, child: const Text('Coba lagi')),
+          ],
+        ),
       ),
     );
   }

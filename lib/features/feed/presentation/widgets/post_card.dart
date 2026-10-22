@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../feed/data/models/post.dart';
 import '../../../../app/router.dart';
+import '../../../../app/theme/app_theme.dart';
 import '../providers/feed_providers.dart';
 import '../../../moderation/presentation/widgets/report_dialog.dart';
 
@@ -17,6 +18,7 @@ class PostCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final positive = AppPalette.of(context).positive;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -55,10 +57,22 @@ class PostCard extends ConsumerWidget {
                               ),
                             ),
                             PopupMenuButton<String>(
-                              onSelected: (v) {
-                                if (v == 'report') showReportDialog(context, ref, targetType: 'post', postId: post.id);
+                              onSelected: (v) async {
+                                if (v == 'report') {
+                                  showReportDialog(context, ref, targetType: 'post', postId: post.id);
+                                } else if (v == 'edit') {
+                                  _showEditDialog(context, ref);
+                                } else if (v == 'delete') {
+                                  _confirmDelete(context, ref);
+                                }
                               },
-                              itemBuilder: (c) => const [PopupMenuItem(value: 'report', child: Text('Laporkan'))],
+                              itemBuilder: (c) => [
+                                if (post.isOwn) ...[
+                                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                  const PopupMenuItem(value: 'delete', child: Text('Hapus')),
+                                ],
+                                const PopupMenuItem(value: 'report', child: Text('Laporkan')),
+                              ],
                               icon: const Icon(Icons.more_vert, size: 18),
                             ),
                           ],
@@ -72,11 +86,11 @@ class PostCard extends ConsumerWidget {
                             if (post.hasBestAnswer)
                               Padding(
                                 padding: const EdgeInsets.only(right: AppSpacing.sm),
-                                child: Text('Terjawab', style: theme.textTheme.labelSmall?.copyWith(color: Colors.green, fontWeight: FontWeight.w600)),
+                                child: Text('Terjawab', style: theme.textTheme.labelSmall?.copyWith(color: positive, fontWeight: FontWeight.w600)),
                               ),
                             _ActionIcon(
                               icon: post.currentUserHelpful ? Icons.favorite : Icons.favorite_border,
-                              color: post.currentUserHelpful ? Colors.red : null,
+                              color: post.currentUserHelpful ? theme.colorScheme.secondary : null,
                               label: '${post.helpfulCount}',
                               tooltip: 'Suka',
                               onTap: () async {
@@ -121,6 +135,96 @@ class PostCard extends ConsumerWidget {
               const Divider(height: 1),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Post?'),
+        content: const Text('Post akan dihapus dan tidak bisa dikembalikan.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final err = await ref.read(postInteractionProvider.notifier).deletePost(post.id);
+              if (err != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+              } else if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post berhasil dihapus.')));
+              }
+            },
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, WidgetRef ref) {
+    final titleCtrl = TextEditingController(text: post.title);
+    final contentCtrl = TextEditingController(text: post.content);
+    String selectedType = post.type;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setDlgState) => AlertDialog(
+          title: const Text('Edit Post'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: titleCtrl,
+                  decoration: const InputDecoration(labelText: 'Judul', border: OutlineInputBorder()),
+                  maxLength: 200,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: contentCtrl,
+                  decoration: const InputDecoration(labelText: 'Konten', border: OutlineInputBorder()),
+                  maxLines: 6,
+                  maxLength: 10000,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  children: PostType.all.map((t) => ChoiceChip(
+                    label: Text(PostType.labels[t]!),
+                    selected: selectedType == t,
+                    visualDensity: VisualDensity.compact,
+                    onSelected: (_) => setDlgState(() => selectedType = t),
+                  )).toList(),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final err = await ref.read(postInteractionProvider.notifier).editPost(
+                      postId: post.id,
+                      title: titleCtrl.text.trim(),
+                      content: contentCtrl.text.trim(),
+                      type: selectedType,
+                    );
+                if (err != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                } else if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post berhasil diperbarui.')));
+                }
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
         ),
       ),
     );
