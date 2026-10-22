@@ -86,7 +86,6 @@ supabase/
 ├── migrations/           # 34 berkas migrasi SQL (M1 s.d. M13 + patches)
 └── verification/         # Rangkaian skrip uji verifikasi keamanan RLS
 test/                     # 281 uji coba otomatis (unit, widget, provider)
-laporan/                  # Dokumen master PRD/SRD Word (.docx) & Markdown
 ```
 
 ---
